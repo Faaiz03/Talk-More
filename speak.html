@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speak — impromptu practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0a0a;
+    --paper:#f5f4f0;
+    --paper-dim:#e9e7e0;
+    --gray:#8a8a85;
+    --line:#2a2a2a22;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'IBM Plex Mono', monospace;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow-x:hidden;
+  }
+
+  .stage{
+    width:100%;
+    max-width:720px;
+    padding:32px;
+  }
+
+  .eyebrow{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gray);
+    margin-bottom:20px;
+  }
+  .eyebrow .dot{
+    display:inline-block;
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:var(--gray);
+    margin-right:8px;
+    position:relative;
+    top:-1px;
+  }
+  .dot.live{background:var(--paper);}
+
+  .card{
+    position:relative;
+    border:1px solid #ffffff22;
+    background:linear-gradient(180deg,#111 0%, #0d0d0d 100%);
+    border-radius:2px;
+    padding:64px 40px 48px;
+    min-height:300px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+  }
+  .card::before{
+    content:"";
+    position:absolute;
+    inset:8px;
+    border:1px solid #ffffff10;
+    pointer-events:none;
+  }
+
+  .card-label{
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--gray);
+    margin-bottom:18px;
+  }
+
+  .topic{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:clamp(2rem, 7vw, 3.4rem);
+    line-height:1.15;
+    color:var(--paper);
+    max-width:520px;
+  }
+
+  @keyframes cardIn{
+    0%{ opacity:0; transform:translateY(14px) rotate(-0.6deg); }
+    100%{ opacity:1; transform:translateY(0) rotate(0deg); }
+  }
+  .card.animate{
+    animation:cardIn 0.38s cubic-bezier(.2,.8,.2,1);
+  }
+
+  .controls{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:28px;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+
+  .timer{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:15px;
+    letter-spacing:0.04em;
+    color:var(--paper);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .timer .clock{
+    font-size:22px;
+    font-weight:500;
+    min-width:64px;
+  }
+  .timer.warn .clock{color:#e0d9c8;}
+  .timer.done .clock{color:var(--paper);}
+
+  .bar{
+    width:100%;
+    height:1px;
+    background:#ffffff20;
+    margin-top:16px;
+    position:relative;
+  }
+  .bar-fill{
+    position:absolute;
+    left:0; top:0; bottom:0;
+    background:var(--paper);
+    width:0%;
+    transition:width 1s linear;
+  }
+
+  button{
+    font-family:'IBM Plex Mono', monospace;
+    background:transparent;
+    color:var(--paper);
+    border:1px solid #ffffff40;
+    padding:11px 18px;
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    cursor:pointer;
+    border-radius:2px;
+    transition:background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  button:hover{ background:#ffffff12; border-color:#ffffff70; }
+  button:active{ transform:scale(0.98); }
+  button:focus-visible{ outline:2px solid var(--paper); outline-offset:2px; }
+  button:disabled{ opacity:0.4; cursor:default; }
+
+  button.primary{
+    background:var(--paper);
+    color:var(--ink);
+    border-color:var(--paper);
+  }
+  button.primary:hover{ background:#e6e4dd; }
+
+  .btn-row{ display:flex; gap:10px; }
+
+  .footer-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:22px;
+    font-size:11px;
+    color:var(--gray);
+    letter-spacing:0.06em;
+  }
+  .footer-row a, .footer-row span.link{
+    color:var(--gray);
+    cursor:pointer;
+    text-decoration:underline;
+    text-underline-offset:3px;
+  }
+  .footer-row a:hover, .footer-row span.link:hover{ color:var(--paper); }
+
+  select{
+    font-family:'IBM Plex Mono', monospace;
+    background:transparent;
+    color:var(--gray);
+    border:none;
+    font-size:11px;
+    letter-spacing:0.06em;
+    cursor:pointer;
+  }
+  select:focus-visible{ outline:2px solid var(--paper); }
+  option{ background:#111; color:var(--paper); }
+
+  .error-msg{
+    font-size:12px;
+    color:var(--gray);
+    text-align:center;
+    margin-top:14px;
+    line-height:1.6;
+    display:none;
+  }
+  .error-msg.show{ display:block; }
+  .error-msg code{
+    background:#ffffff12;
+    padding:1px 5px;
+    border-radius:2px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .card.animate{ animation:none; }
+  }
+
+  @media (max-width:480px){
+    .card{ padding:48px 24px 36px; min-height:240px; }
+    .stage{ padding:20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="eyebrow">
+    <span><span class="dot" id="statusDot"></span><span id="statusText">loading</span></span>
+    <span id="deckCount">—</span>
+  </div>
+
+  <div class="card animate" id="card">
+    <div class="card-label" id="categoryLabel">topic</div>
+    <div class="topic" id="topicText">Fetching topics…</div>
+  </div>
+
+  <div class="controls">
+    <div class="timer" id="timerWrap">
+      <span class="clock" id="clock">01:30</span>
+    </div>
+    <div class="btn-row">
+      <button id="startBtn" disabled>Start</button>
+      <button id="drawBtn" class="primary" disabled>Draw topic</button>
+    </div>
+  </div>
+
+  <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+
+  <div class="footer-row">
+    <span class="link" id="resetBtn">Reset timer</span>
+    <label>
+      Duration
+      <select id="durationSelect">
+        <option value="60">1 min</option>
+        <option value="90" selected>1.5 min</option>
+        <option value="120">2 min</option>
+        <option value="180">3 min</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+</div>
+
+<script>
+let topics = [];
+let deck = [];
+let deckIndex = 0;
+let timerId = null;
+let remaining = 90;
+let duration = 90;
+let running = false;
+
+const cardEl = document.getElementById('card');
+const topicText = document.getElementById('topicText');
+const categoryLabel = document.getElementById('categoryLabel');
+const deckCount = document.getElementById('deckCount');
+const clock = document.getElementById('clock');
+const barFill = document.getElementById('barFill');
+const startBtn = document.getElementById('startBtn');
+const drawBtn = document.getElementById('drawBtn');
+const resetBtn = document.getElementById('resetBtn');
+const durationSelect = document.getElementById('durationSelect');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const timerWrap = document.getElementById('timerWrap');
+const errorMsg = document.getElementById('errorMsg');
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function newDeck(){
+  deck = shuffle(topics);
+  deckIndex = 0;
+}
+
+function formatTime(sec){
+  const m = Math.floor(sec / 60).toString().padStart(2, '0');
+  const s = Math.floor(sec % 60).toString().padStart(2, '0');
+  return m + ':' + s;
+}
+
+function updateClock(){
+  clock.textContent = formatTime(remaining);
+  const pct = 100 - (remaining / duration) * 100;
+  barFill.style.width = pct + '%';
+  timerWrap.classList.toggle('warn', remaining <= 10 && remaining > 0);
+  timerWrap.classList.toggle('done', remaining === 0);
+}
+
+function drawTopic(){
+  if(topics.length === 0) return;
+  if(deckIndex >= deck.length) newDeck();
+  const [category, text] = deck[deckIndex];
+  deckIndex++;
+  categoryLabel.textContent = category;
+  topicText.textContent = text;
+  deckCount.textContent = 'card ' + deckIndex + ' / ' + deck.length;
+  cardEl.classList.remove('animate');
+  void cardEl.offsetWidth;
+  cardEl.classList.add('animate');
+  stopTimer();
+  remaining = duration;
+  updateClock();
+}
+
+function stopTimer(){
+  running = false;
+  clearInterval(timerId);
+  startBtn.textContent = 'Start';
+  statusDot.classList.remove('live');
+  statusText.textContent = 'ready';
+}
+
+function tick(){
+  remaining--;
+  updateClock();
+  if(remaining <= 0){
+    stopTimer();
+    statusText.textContent = "time's up";
+  }
+}
+
+function startTimer(){
+  if(running){
+    stopTimer();
+    return;
+  }
+  if(remaining <= 0) remaining = duration;
+  running = true;
+  startBtn.textContent = 'Pause';
+  statusDot.classList.add('live');
+  statusText.textContent = 'speaking';
+  timerId = setInterval(tick, 1000);
+}
+
+function enableControls(){
+  startBtn.disabled = false;
+  drawBtn.disabled = false;
+}
+
+function showError(message){
+  errorMsg.innerHTML = message;
+  errorMsg.classList.add('show');
+  topicText.textContent = 'Could not load topics';
+  statusText.textContent = 'error';
+}
+
+async function loadTopics(){
+  try{
+    const res = await fetch('topics.json', { cache: 'no-store' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if(!Array.isArray(data) || data.length === 0) throw new Error('empty topics.json');
+    topics = data;
+    newDeck();
+    statusText.textContent = 'ready';
+    enableControls();
+    drawTopic();
+  }catch(err){
+    showError(
+      "Couldn't load <code>topics.json</code>. If you opened this file directly " +
+      "(file://), browsers block local fetches — run a tiny local server instead, e.g. " +
+      "<code>python3 -m http.server</code> in this folder, then open " +
+      "<code>http://localhost:8000/speak.html</code>."
+    );
+  }
+}
+
+drawBtn.addEventListener('click', drawTopic);
+startBtn.addEventListener('click', startTimer);
+resetBtn.addEventListener('click', () => {
+  stopTimer();
+  remaining = duration;
+  updateClock();
+});
+durationSelect.addEventListener('change', (e) => {
+  duration = parseInt(e.target.value, 10);
+  stopTimer();
+  remaining = duration;
+  updateClock();
+});
+
+updateClock();
+loadTopics();
+</script>
+
+</body>
+</html>
