@@ -1,32 +1,562 @@
 [
-  ["everyday", "The last thing you fixed yourself"],
-  ["everyday", "A meal you could cook with your eyes closed"],
-  ["everyday", "The most useless app on your phone"],
-  ["everyday", "A skill you learned the hard way"],
-  ["everyday", "Your morning routine, and why it's wrong"],
-  ["opinion", "Cities are better than nature for creativity"],
-  ["opinion", "Handwriting still matters"],
-  ["opinion", "Money can buy happiness, actually"],
-  ["opinion", "Remote work makes people worse colleagues"],
-  ["opinion", "Nostalgia is a trap"],
-  ["abstract", "What silence sounds like"],
-  ["abstract", "The shape of a good decision"],
-  ["abstract", "If time were a place, not a line"],
-  ["abstract", "What your favorite color would say if it spoke"],
-  ["abstract", "The weight of an unfinished sentence"],
-  ["storytelling", "Describe a door you've never opened"],
-  ["storytelling", "Tell the story of your name"],
-  ["storytelling", "A conversation you wish you'd had"],
-  ["storytelling", "The best advice you ignored"],
-  ["storytelling", "A place that changed how you think"],
-  ["debate", "Should schools teach failure as a subject?"],
-  ["debate", "Is competition good for creativity?"],
-  ["debate", "Should everyone learn to code?"],
-  ["debate", "Is privacy a luxury now?"],
-  ["debate", "Should AI write your emails?"],
-  ["future", "The job that won't exist in 20 years"],
-  ["future", "A technology you're quietly afraid of"],
-  ["future", "What cities will sound like in 2050"],
-  ["future", "The habit that will define this decade"],
-  ["future", "A prediction you'd bet money on"]
+  [
+    "everyday",
+    "The last thing you fixed yourself"
+  ],
+  [
+    "everyday",
+    "A meal you could cook with your eyes closed"
+  ],
+  [
+    "everyday",
+    "The most useless app on your phone"
+  ],
+  [
+    "everyday",
+    "A skill you learned the hard way"
+  ],
+  [
+    "everyday",
+    "Your morning routine, and why it's wrong"
+  ],
+  [
+    "everyday",
+    "The one chore you always put off"
+  ],
+  [
+    "everyday",
+    "A gadget you couldn't live without"
+  ],
+  [
+    "everyday",
+    "The best excuse for being late"
+  ],
+  [
+    "everyday",
+    "Something you own that's older than it looks"
+  ],
+  [
+    "everyday",
+    "A habit you're trying to build"
+  ],
+  [
+    "everyday",
+    "The most overrated household item"
+  ],
+  [
+    "everyday",
+    "How you actually spend your weekends"
+  ],
+  [
+    "everyday",
+    "A recipe you've never gotten right"
+  ],
+  [
+    "everyday",
+    "The last thing you bought that you regret"
+  ],
+  [
+    "everyday",
+    "A rule your household has that outsiders find strange"
+  ],
+  [
+    "everyday",
+    "The item in your bag you never use but always carry"
+  ],
+  [
+    "everyday",
+    "A store you could wander for hours"
+  ],
+  [
+    "everyday",
+    "The worst piece of furniture you've owned"
+  ],
+  [
+    "everyday",
+    "A smell that instantly changes your mood"
+  ],
+  [
+    "everyday",
+    "The app notification you always ignore"
+  ],
+  [
+    "opinion",
+    "Cities are better than nature for creativity"
+  ],
+  [
+    "opinion",
+    "Handwriting still matters"
+  ],
+  [
+    "opinion",
+    "Money can buy happiness, actually"
+  ],
+  [
+    "opinion",
+    "Remote work makes people worse colleagues"
+  ],
+  [
+    "opinion",
+    "Nostalgia is a trap"
+  ],
+  [
+    "opinion",
+    "Everyone should learn to cook before living alone"
+  ],
+  [
+    "opinion",
+    "Silence is more productive than background music"
+  ],
+  [
+    "opinion",
+    "Social media has made people worse listeners"
+  ],
+  [
+    "opinion",
+    "The best ideas come from boredom, not inspiration"
+  ],
+  [
+    "opinion",
+    "A four-day work week would make people less lazy, not more"
+  ],
+  [
+    "opinion",
+    "Public transport says more about a city than its skyline"
+  ],
+  [
+    "opinion",
+    "Reading fiction makes you a better decision-maker"
+  ],
+  [
+    "opinion",
+    "Most self-help advice is common sense dressed up"
+  ],
+  [
+    "opinion",
+    "Small talk is underrated"
+  ],
+  [
+    "opinion",
+    "People overvalue passion and undervalue consistency"
+  ],
+  [
+    "opinion",
+    "Cash should make a comeback"
+  ],
+  [
+    "opinion",
+    "The best teachers are the strictest ones"
+  ],
+  [
+    "opinion",
+    "Traveling alone teaches more than traveling with others"
+  ],
+  [
+    "opinion",
+    "Comfort zones exist for a good reason"
+  ],
+  [
+    "opinion",
+    "Most meetings should have been a message"
+  ],
+  [
+    "abstract",
+    "What silence sounds like"
+  ],
+  [
+    "abstract",
+    "The shape of a good decision"
+  ],
+  [
+    "abstract",
+    "If time were a place, not a line"
+  ],
+  [
+    "abstract",
+    "What your favorite color would say if it spoke"
+  ],
+  [
+    "abstract",
+    "The weight of an unfinished sentence"
+  ],
+  [
+    "abstract",
+    "What trust looks like from the outside"
+  ],
+  [
+    "abstract",
+    "The texture of a bad memory"
+  ],
+  [
+    "abstract",
+    "If patience had a smell"
+  ],
+  [
+    "abstract",
+    "The sound of an idea forming"
+  ],
+  [
+    "abstract",
+    "What a closed door represents to you"
+  ],
+  [
+    "abstract",
+    "The color of a Monday versus a Friday"
+  ],
+  [
+    "abstract",
+    "If courage were a piece of furniture"
+  ],
+  [
+    "abstract",
+    "What waiting rooms are secretly for"
+  ],
+  [
+    "abstract",
+    "The taste of a memory you can't quite place"
+  ],
+  [
+    "abstract",
+    "What a language sounds like to someone who doesn't speak it"
+  ],
+  [
+    "abstract",
+    "If your thoughts had handwriting, what would it look like"
+  ],
+  [
+    "abstract",
+    "The architecture of an argument"
+  ],
+  [
+    "abstract",
+    "What a favorite song owes you"
+  ],
+  [
+    "abstract",
+    "The temperature of a difficult conversation"
+  ],
+  [
+    "abstract",
+    "If honesty were a piece of clothing"
+  ],
+  [
+    "storytelling",
+    "Describe a door you've never opened"
+  ],
+  [
+    "storytelling",
+    "Tell the story of your name"
+  ],
+  [
+    "storytelling",
+    "A conversation you wish you'd had"
+  ],
+  [
+    "storytelling",
+    "The best advice you ignored"
+  ],
+  [
+    "storytelling",
+    "A place that changed how you think"
+  ],
+  [
+    "storytelling",
+    "The first time you felt truly on your own"
+  ],
+  [
+    "storytelling",
+    "A stranger who left an impression on you"
+  ],
+  [
+    "storytelling",
+    "The moment you realized you'd grown up a little"
+  ],
+  [
+    "storytelling",
+    "A risk that didn't pay off, and what it taught you"
+  ],
+  [
+    "storytelling",
+    "The story behind an object you'd grab in an emergency"
+  ],
+  [
+    "storytelling",
+    "A time you had to change your mind publicly"
+  ],
+  [
+    "storytelling",
+    "The best meal you've ever had, and why"
+  ],
+  [
+    "storytelling",
+    "A rule you broke on purpose"
+  ],
+  [
+    "storytelling",
+    "The longest day you can remember"
+  ],
+  [
+    "storytelling",
+    "A time silence said more than words could"
+  ],
+  [
+    "storytelling",
+    "The first big decision you made completely alone"
+  ],
+  [
+    "storytelling",
+    "A lesson you learned from someone younger than you"
+  ],
+  [
+    "storytelling",
+    "The trip that didn't go as planned"
+  ],
+  [
+    "storytelling",
+    "A time you had to ask for help"
+  ],
+  [
+    "storytelling",
+    "The story of your worst haircut, job, or decision"
+  ],
+  [
+    "debate",
+    "Should schools teach failure as a subject?"
+  ],
+  [
+    "debate",
+    "Is competition good for creativity?"
+  ],
+  [
+    "debate",
+    "Should everyone learn to code?"
+  ],
+  [
+    "debate",
+    "Is privacy a luxury now?"
+  ],
+  [
+    "debate",
+    "Should AI write your emails?"
+  ],
+  [
+    "debate",
+    "Should tipping be replaced by fair wages?"
+  ],
+  [
+    "debate",
+    "Is a four-year degree still worth it?"
+  ],
+  [
+    "debate",
+    "Should social media have a minimum age with teeth?"
+  ],
+  [
+    "debate",
+    "Is remote learning as effective as in-person?"
+  ],
+  [
+    "debate",
+    "Should companies be required to disclose salary ranges?"
+  ],
+  [
+    "debate",
+    "Is it ethical to use AI to write your resume?"
+  ],
+  [
+    "debate",
+    "Should there be a universal basic income?"
+  ],
+  [
+    "debate",
+    "Is cancel culture a form of accountability or mob justice?"
+  ],
+  [
+    "debate",
+    "Should students be allowed phones in class?"
+  ],
+  [
+    "debate",
+    "Is it better to specialize early or stay a generalist?"
+  ],
+  [
+    "debate",
+    "Should employers be allowed to monitor remote workers?"
+  ],
+  [
+    "debate",
+    "Is nuclear energy the answer to the climate crisis?"
+  ],
+  [
+    "debate",
+    "Should influencers be regulated like advertisers?"
+  ],
+  [
+    "debate",
+    "Is hustle culture doing more harm than good?"
+  ],
+  [
+    "debate",
+    "Should voting be mandatory?"
+  ],
+  [
+    "future",
+    "The job that won't exist in 20 years"
+  ],
+  [
+    "future",
+    "A technology you're quietly afraid of"
+  ],
+  [
+    "future",
+    "What cities will sound like in 2050"
+  ],
+  [
+    "future",
+    "The habit that will define this decade"
+  ],
+  [
+    "future",
+    "A prediction you'd bet money on"
+  ],
+  [
+    "future",
+    "How classrooms will look in 30 years"
+  ],
+  [
+    "future",
+    "The technology that will feel embarrassing to have used"
+  ],
+  [
+    "future",
+    "What money might look like in the future"
+  ],
+  [
+    "future",
+    "A skill that will matter more than it does today"
+  ],
+  [
+    "future",
+    "How friendships might change in a more digital world"
+  ],
+  [
+    "future",
+    "The invention you wish existed already"
+  ],
+  [
+    "future",
+    "What work-life balance might mean in ten years"
+  ],
+  [
+    "future",
+    "A current trend that won't survive the decade"
+  ],
+  [
+    "future",
+    "How travel might change with new technology"
+  ],
+  [
+    "future",
+    "The next big shift in how we learn"
+  ],
+  [
+    "future",
+    "What privacy might mean to the next generation"
+  ],
+  [
+    "future",
+    "A job that will exist in 20 years that doesn't now"
+  ],
+  [
+    "future",
+    "How AI might change creative work"
+  ],
+  [
+    "future",
+    "The habit from today that will look outdated"
+  ],
+  [
+    "future",
+    "What houses might look like in 50 years"
+  ],
+  [
+    "playful",
+    "If you had to describe yourself as a kitchen appliance"
+  ],
+  [
+    "playful",
+    "The most useless superpower you'd actually want"
+  ],
+  [
+    "playful",
+    "A conspiracy theory you'd invent for fun"
+  ],
+  [
+    "playful",
+    "If animals could talk, which would be the rudest"
+  ],
+  [
+    "playful",
+    "The worst possible theme song for your life"
+  ],
+  [
+    "playful",
+    "If you ran a small business, what would it sell"
+  ],
+  [
+    "playful",
+    "A ridiculous new Olympic sport you'd invent"
+  ],
+  [
+    "playful",
+    "The most unnecessary invention you can imagine"
+  ],
+  [
+    "playful",
+    "If your life were a genre of movie, which one"
+  ],
+  [
+    "playful",
+    "A fake holiday you'd want the world to celebrate"
+  ],
+  [
+    "playful",
+    "The worst superhero name you can think of"
+  ],
+  [
+    "playful",
+    "If you could swap lives with a fictional character for a day"
+  ],
+  [
+    "playful",
+    "The strangest food combination you secretly enjoy"
+  ],
+  [
+    "playful",
+    "A skill you'd want to instantly download into your brain"
+  ],
+  [
+    "playful",
+    "If your pet (real or imagined) wrote a memoir, what's the title"
+  ],
+  [
+    "playful",
+    "The most dramatic way to describe a mundane task"
+  ],
+  [
+    "playful",
+    "A rule you'd make if you were briefly in charge of the world"
+  ],
+  [
+    "playful",
+    "The worst theme for a birthday party"
+  ],
+  [
+    "playful",
+    "If you had to sell ice to a penguin, what's your pitch"
+  ],
+  [
+    "playful",
+    "A completely made-up fact you'd try to convince people is true"
+  ]
 ]
