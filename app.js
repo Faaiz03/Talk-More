@@ -445,8 +445,8 @@ let deck = [];
 let deckIndex = 0;
 let currentTopic = null;
 let timerId = null;
-let remaining = 90;
-let duration = 90;
+let remaining = 180;
+let duration = 180;
 let running = false;
 
 const cardEl = document.getElementById('card');
@@ -464,6 +464,54 @@ const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
 const timerWrap = document.getElementById('timerWrap');
 const errorMsg = document.getElementById('errorMsg');
+
+/* ---- Speech capture (Web Speech API) ---- */
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+const speechSupported = !!SpeechRecognitionCtor;
+let recognition = null;
+let speechTranscript = '';
+let micDenied = false;
+
+if(speechSupported){
+  recognition = new SpeechRecognitionCtor();
+  recognition.continuous = true;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = (e) => {
+    for(let i = e.resultIndex; i < e.results.length; i++){
+      if(e.results[i].isFinal){
+        const chunk = e.results[i][0].transcript.trim();
+        if(chunk) speechTranscript += (speechTranscript ? ' ' : '') + chunk;
+      }
+    }
+  };
+
+  recognition.onerror = (e) => {
+    if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+      micDenied = true;
+    }
+    // other errors (e.g. 'no-speech') are transient — onend below decides whether to restart
+  };
+
+  recognition.onend = () => {
+    // Chrome periodically ends recognition on its own (silence, ~60s caps).
+    // If the timer's still running and the mic wasn't denied, pick back up.
+    if(running && !micDenied){
+      try{ recognition.start(); }catch(e){ /* already running, ignore */ }
+    }
+  };
+}
+
+function beginSpeechCapture(){
+  if(!speechSupported) return;
+  try{ recognition.start(); }catch(e){ /* already started, ignore */ }
+}
+
+function stopSpeechCapture(){
+  if(!speechSupported) return;
+  try{ recognition.stop(); }catch(e){ /* ignore */ }
+}
 
 function shuffle(arr){
   const a = arr.slice();
@@ -509,6 +557,8 @@ function drawTopic(){
   remaining = duration;
   updateClock();
   completeBtn.disabled = false;
+  speechTranscript = '';
+  micDenied = false;
 }
 
 function stopTimer(){
@@ -517,6 +567,7 @@ function stopTimer(){
   startBtn.textContent = 'Start';
   statusDot.classList.remove('live');
   statusText.textContent = 'ready';
+  stopSpeechCapture();
 }
 
 function tick(){
@@ -539,6 +590,7 @@ function startTimer(){
   statusDot.classList.add('live');
   statusText.textContent = 'speaking';
   timerId = setInterval(tick, 1000);
+  beginSpeechCapture();
 }
 
 function enableControls(){
@@ -547,26 +599,130 @@ function enableControls(){
   completeBtn.disabled = false;
 }
 
+/* ---- Evaluation panel ---- */
+const evalPanel = document.getElementById('evalPanel');
+const evalBody = document.getElementById('evalBody');
+const closeEvalBtn = document.getElementById('closeEvalBtn');
+
+closeEvalBtn.addEventListener('click', hideEvalPanel);
+
+function showEvalPanel(){
+  evalPanel.classList.remove('hidden');
+}
+function hideEvalPanel(){
+  evalPanel.classList.add('hidden');
+}
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+function setEvalNote(text){
+  evalBody.innerHTML = '<p class="eval-note">' + escapeHtml(text) + '</p>';
+}
+function setEvalLoading(){
+  evalBody.innerHTML = '<p class="eval-loading">Evaluating your response…</p>';
+}
+function renderEvalResult(scores, feedback){
+  const dims = [
+    ['clarity', 'Clarity'],
+    ['structure', 'Structure'],
+    ['filler_words', 'Filler words'],
+    ['pacing', 'Pacing']
+  ];
+  const rows = dims.map(([key, label]) => {
+    const val = scores ? scores[key] : null;
+    if(val === null || val === undefined){
+      return '<div class="eval-row"><span class="eval-label">' + label +
+        '</span><span></span><span class="eval-score">—</span></div>';
+    }
+    const pct = Math.max(0, Math.min(100, val * 10));
+    return '<div class="eval-row"><span class="eval-label">' + label +
+      '</span><div class="eval-bar"><div class="eval-bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<span class="eval-score">' + val + '/10</span></div>';
+  }).join('');
+  evalBody.innerHTML = rows + '<p class="eval-feedback">' + escapeHtml(feedback || '') + '</p>';
+}
+
+async function evaluateAttempt(topic, transcript, deckId, completionId, wasSpeechSupported, wasMicDenied, elapsedSeconds){
+  showEvalPanel();
+
+  if(!wasSpeechSupported){
+    setEvalNote("Speech recognition isn't supported in this browser — try Chrome or Edge to get feedback next time. Your completion was still saved.");
+    return;
+  }
+  if(wasMicDenied){
+    setEvalNote("Microphone access was denied, so this attempt couldn't be evaluated. Your completion was still saved.");
+    return;
+  }
+  if(!transcript || !transcript.trim()){
+    setEvalNote("No speech was captured for this attempt, so there's nothing to evaluate. Your completion was still saved.");
+    return;
+  }
+
+  setEvalLoading();
+
+  const { data, error } = await sb.functions.invoke('evaluate-speech', {
+    body: { topic: topic.text, category: topic.category, transcript, elapsedSeconds }
+  });
+
+  if(error || !data || !data.scores){
+    setEvalNote('Could not get feedback for this attempt (evaluation service error). Your completion was still saved.');
+    return;
+  }
+
+  renderEvalResult(data.scores, data.feedback);
+
+  await sb.from('evaluations').insert({
+    user_id: currentUser.id,
+    completion_id: completionId,
+    deck_id: deckId,
+    topic_key: topic.key,
+    category: topic.category,
+    topic_text: topic.text,
+    transcript,
+    scores: data.scores,
+    feedback: data.feedback || ''
+  });
+}
+
 async function markComplete(){
   if(!currentTopic || !currentUser) return;
   completeBtn.disabled = true;
+
+  // Snapshot everything before state moves on to the next topic
+  const topicSnapshot = { ...currentTopic };
+  const transcriptSnapshot = speechTranscript;
+  const deckIdSnapshot = selectedDeckId === 'default' ? null : selectedDeckId;
+  const wasSpeechSupported = speechSupported;
+  const wasMicDenied = micDenied;
+  const elapsedSecondsSnapshot = Math.max(0, duration - remaining);
+
   const payload = {
     user_id: currentUser.id,
-    deck_id: selectedDeckId === 'default' ? null : selectedDeckId,
-    topic_id: currentTopic.id || null,
-    topic_key: currentTopic.key,
-    category: currentTopic.category,
-    text: currentTopic.text
+    deck_id: deckIdSnapshot,
+    topic_id: topicSnapshot.id || null,
+    topic_key: topicSnapshot.key,
+    category: topicSnapshot.category,
+    text: topicSnapshot.text
   };
-  const { error } = await sb.from('completions').insert(payload);
+  const { data: completionRow, error } = await sb
+    .from('completions')
+    .insert(payload)
+    .select('id')
+    .single();
   if(error){
     statusText.textContent = 'error saving';
     completeBtn.disabled = false;
     return;
   }
-  const doneKey = currentTopic.key;
+  const doneKey = topicSnapshot.key;
   topics = topics.filter(t => t.key !== doneKey);
   stopTimer();
+
+  // Fire off evaluation in the background — don't block moving to the next topic
+  evaluateAttempt(topicSnapshot, transcriptSnapshot, deckIdSnapshot, completionRow.id, wasSpeechSupported, wasMicDenied, elapsedSecondsSnapshot);
+
   if(topics.length === 0){
     currentTopic = null;
     handleEmptyDeck("You've completed every topic in this deck. Add more via \"Manage decks\".");
@@ -609,7 +765,10 @@ async function loadDefaultTopics(){
   }
 }
 
-drawBtn.addEventListener('click', drawTopic);
+drawBtn.addEventListener('click', () => {
+  hideEvalPanel();
+  drawTopic();
+});
 startBtn.addEventListener('click', startTimer);
 resetBtn.addEventListener('click', () => {
   stopTimer();

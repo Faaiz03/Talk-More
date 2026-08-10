@@ -118,7 +118,7 @@
 
   <div class="controls">
     <div class="timer" id="timerWrap">
-      <span class="clock" id="clock">01:30</span>
+      <span class="clock" id="clock">03:00</span>
     </div>
     <div class="btn-row">
       <button id="startBtn" disabled>Start</button>
@@ -129,15 +129,23 @@
 
   <div class="bar"><div class="bar-fill" id="barFill"></div></div>
 
+  <div class="eval-panel hidden" id="evalPanel">
+    <div class="eval-head">
+      <span>Evaluation</span>
+      <span class="link" id="closeEvalBtn">Close</span>
+    </div>
+    <div id="evalBody"></div>
+  </div>
+
   <div class="footer-row">
     <span class="link" id="resetBtn">Reset timer</span>
     <label>
       Duration
       <select id="durationSelect">
-        <option value="60">1 min</option>
-        <option value="90" selected>1.5 min</option>
-        <option value="120">2 min</option>
-        <option value="180">3 min</option>
+        <option value="180" selected>3 min</option>
+        <option value="300">5 min</option>
+        <option value="420">7 min</option>
+        <option value="600">10 min</option>
       </select>
     </label>
   </div>

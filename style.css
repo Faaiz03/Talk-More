@@ -463,3 +463,68 @@
     color:var(--gray);
     text-align:center;
   }
+
+  /* ---- Evaluation panel ---- */
+  .eval-panel{
+    border:1px solid #ffffff22;
+    background:linear-gradient(180deg,#111 0%, #0d0d0d 100%);
+    border-radius:2px;
+    padding:20px 24px 22px;
+    margin-top:20px;
+  }
+  .eval-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gray);
+    margin-bottom:16px;
+  }
+  .eval-head .link{
+    cursor:pointer;
+    text-decoration:underline;
+    text-underline-offset:3px;
+    text-transform:none;
+    letter-spacing:normal;
+    font-size:12px;
+  }
+  .eval-head .link:hover{ color:var(--paper); }
+  .eval-row{
+    display:grid;
+    grid-template-columns:96px 1fr 40px;
+    align-items:center;
+    gap:12px;
+    margin-bottom:10px;
+    font-size:12px;
+  }
+  .eval-label{ color:var(--gray); }
+  .eval-bar{
+    height:4px;
+    background:#ffffff18;
+    border-radius:2px;
+    position:relative;
+  }
+  .eval-bar-fill{
+    position:absolute;
+    left:0; top:0; bottom:0;
+    background:var(--paper);
+    border-radius:2px;
+  }
+  .eval-score{
+    text-align:right;
+    color:var(--paper);
+  }
+  .eval-feedback{
+    margin:16px 0 0;
+    font-size:13px;
+    line-height:1.65;
+    color:var(--paper);
+  }
+  .eval-loading, .eval-note{
+    margin:0;
+    font-size:12px;
+    color:var(--gray);
+    font-style:italic;
+  }
