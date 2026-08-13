@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Speak More</title>
+<title>Speak — impromptu practice</title>
 <meta name="description" content="A minimalist timed speaking practice app. Draw a prompt, speak against the clock, and track your progress over time.">
 <meta name="theme-color" content="#0a0a0a">
 <meta property="og:title" content="Speak — impromptu practice">
@@ -14,13 +14,69 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
+
+<!-- LANDING SCREEN -->
+<div class="stage hidden" id="landingStage">
+  <div class="landing-nav">
+    <span class="landing-word">Speak</span>
+    <span class="link" id="landingLoginBtn">Log in</span>
+  </div>
+
+  <div class="landing-hero">
+    <h1 class="landing-title">Think on your feet.<br>Out loud.</h1>
+    <p class="landing-sub">Draw a prompt, speak against the clock, and get AI feedback on clarity, structure, and pacing — then watch your scores trend upward over time.</p>
+    <div class="landing-cta">
+      <button class="primary" id="landingSignupBtn">Get started — it's free</button>
+      <button id="landingTryBtn">Try a topic first ↓</button>
+    </div>
+  </div>
+
+  <div class="landing-features">
+    <div class="feature">
+      <div class="feature-num">01</div>
+      <div class="feature-text"><strong>140+ prompts</strong> across seven categories — everyday, opinion, abstract, storytelling, debate, future, playful.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">02</div>
+      <div class="feature-text"><strong>AI feedback</strong> on clarity, structure, filler words, and pacing after every attempt.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">03</div>
+      <div class="feature-text"><strong>Streaks &amp; progress</strong> — a calendar history and a trend line so you can see yourself improving.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">04</div>
+      <div class="feature-text"><strong>Custom decks</strong> — build topic sets for interviews, pitches, or anything else you're prepping for.</div>
+    </div>
+  </div>
+
+  <div class="landing-demo" id="landingDemo">
+    <div class="demo-label">Try it — no sign-up needed</div>
+    <div class="card animate" id="demoCard">
+      <div class="card-label" id="demoCategoryLabel">topic</div>
+      <div class="topic" id="demoTopicText">Loading a topic…</div>
+    </div>
+    <div class="controls">
+      <div class="timer" id="demoTimerWrap">
+        <span class="clock" id="demoClock">03:00</span>
+      </div>
+      <div class="btn-row">
+        <button id="demoStartBtn">Start</button>
+        <button class="primary" id="demoDrawBtn">Draw topic</button>
+      </div>
+    </div>
+    <div class="bar"><div class="bar-fill" id="demoBarFill"></div></div>
+    <p class="demo-note">This preview times you locally. Sign up to save attempts, get AI feedback, and track streaks.</p>
+  </div>
+</div>
 
 <!-- AUTH SCREEN -->
 <div class="stage hidden" id="authStage">
   <div class="auth-card">
+    <span class="link back-link" id="authBackBtn">← Back</span>
     <h1 class="auth-title" id="authTitle">Welcome back</h1>
     <p class="auth-sub" id="authSub">Log in to save your practice history and decks.</p>
 
@@ -61,6 +117,7 @@
       <button class="btn-sm" id="manageDecksBtn">Manage decks</button>
       <button class="btn-sm" id="completedBtn">Completed</button>
       <button class="btn-sm" id="historyBtn">History</button>
+      <button class="btn-sm" id="progressBtn">Progress</button>
     </span>
   </div>
 
@@ -100,6 +157,33 @@
     <div class="cal-grid" id="calGrid"></div>
     <div class="cal-summary" id="calSummary"></div>
     <div style="margin-top:16px;"><span class="link" id="closeHistoryBtn">Close</span></div>
+  </div>
+
+  <div class="decks-panel hidden" id="progressPanel">
+    <h2>Your progress</h2>
+
+    <div class="streak-row" id="streakRow">
+      <div class="streak-box">
+        <div class="streak-num" id="currentStreakNum">—</div>
+        <div class="streak-label">current streak</div>
+      </div>
+      <div class="streak-box">
+        <div class="streak-num" id="longestStreakNum">—</div>
+        <div class="streak-label">longest streak</div>
+      </div>
+      <div class="streak-box">
+        <div class="streak-num" id="totalSessionsNum">—</div>
+        <div class="streak-label">sessions evaluated</div>
+      </div>
+    </div>
+
+    <h3>Score trend</h3>
+    <div class="chart-legend" id="chartLegend"></div>
+    <div class="chart-wrap" id="chartWrap">
+      <div class="chart-skel skel"></div>
+    </div>
+
+    <div style="margin-top:16px;"><span class="link" id="closeProgressBtn">Close</span></div>
   </div>
 
   <div class="decks-panel hidden" id="completedPanel">
@@ -169,6 +253,6 @@
 <!-- Toast notifications -->
 <div class="toast-container" id="toastContainer"></div>
 
-<script src="app.js"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

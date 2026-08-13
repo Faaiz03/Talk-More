@@ -55,8 +55,10 @@ function skeletonListHTML(count, widths){
 
 let authMode = 'login'; // 'login' | 'signup'
 
+const landingStage = document.getElementById('landingStage');
 const authStage = document.getElementById('authStage');
 const appStage = document.getElementById('appStage');
+const authBackBtn = document.getElementById('authBackBtn');
 const authTitle = document.getElementById('authTitle');
 const authSub = document.getElementById('authSub');
 const authEmail = document.getElementById('authEmail');
@@ -124,12 +126,21 @@ logoutBtn.addEventListener('click', async () => {
   await sb.auth.signOut();
 });
 
+function showLandingScreen(){
+  landingStage.classList.remove('hidden');
+  authStage.classList.add('hidden');
+  appStage.classList.add('hidden');
+  initDemo();
+}
+
 function showAuthScreen(){
+  landingStage.classList.add('hidden');
   authStage.classList.remove('hidden');
   appStage.classList.add('hidden');
 }
 
 function showAppScreen(user){
+  landingStage.classList.add('hidden');
   authStage.classList.add('hidden');
   appStage.classList.remove('hidden');
   userEmail.textContent = user.email;
@@ -138,11 +149,13 @@ function showAppScreen(user){
   if(topics.length === 0) loadActiveDeckTopics();
 }
 
+authBackBtn.addEventListener('click', showLandingScreen);
+
 sb.auth.onAuthStateChange((event, session) => {
   if(session && session.user){
     showAppScreen(session.user);
   }else{
-    showAuthScreen();
+    showLandingScreen();
   }
 });
 
@@ -150,9 +163,98 @@ sb.auth.getSession().then(({ data }) => {
   if(data.session && data.session.user){
     showAppScreen(data.session.user);
   }else{
-    showAuthScreen();
+    showLandingScreen();
   }
 });
+
+/* ---- Landing page: live demo card (no auth, no persistence) ---- */
+const landingLoginBtn = document.getElementById('landingLoginBtn');
+const landingSignupBtn = document.getElementById('landingSignupBtn');
+const landingTryBtn = document.getElementById('landingTryBtn');
+const landingDemo = document.getElementById('landingDemo');
+const demoCard = document.getElementById('demoCard');
+const demoTopicText = document.getElementById('demoTopicText');
+const demoCategoryLabel = document.getElementById('demoCategoryLabel');
+const demoClock = document.getElementById('demoClock');
+const demoBarFill = document.getElementById('demoBarFill');
+const demoStartBtn = document.getElementById('demoStartBtn');
+const demoDrawBtn = document.getElementById('demoDrawBtn');
+const demoTimerWrap = document.getElementById('demoTimerWrap');
+
+landingLoginBtn.addEventListener('click', () => { setAuthMode('login'); showAuthScreen(); });
+landingSignupBtn.addEventListener('click', () => { setAuthMode('signup'); showAuthScreen(); });
+landingTryBtn.addEventListener('click', () => {
+  landingDemo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+let demoTopics = [];
+let demoDeck = [];
+let demoDeckIndex = 0;
+const demoDuration = 180;
+let demoRemaining = demoDuration;
+let demoTimerId = null;
+let demoRunning = false;
+let demoInitialized = false;
+
+async function initDemo(){
+  if(demoInitialized) return;
+  demoInitialized = true;
+  try{
+    const res = await fetch('topics.json', { cache: 'no-store' });
+    const data = await res.json();
+    demoTopics = data.map(([category, text]) => ({ category, text }));
+    demoDeck = shuffle(demoTopics);
+    demoDeckIndex = 0;
+    drawDemoTopic();
+  }catch(err){
+    demoTopicText.textContent = "Couldn't load a preview topic — sign up to use the full app.";
+  }
+}
+
+function drawDemoTopic(){
+  if(demoDeck.length === 0) return;
+  if(demoDeckIndex >= demoDeck.length){ demoDeck = shuffle(demoTopics); demoDeckIndex = 0; }
+  const t = demoDeck[demoDeckIndex++];
+  demoCategoryLabel.textContent = t.category;
+  demoTopicText.textContent = t.text;
+  demoCard.classList.remove('animate');
+  void demoCard.offsetWidth;
+  demoCard.classList.add('animate');
+  stopDemoTimer();
+  demoRemaining = demoDuration;
+  updateDemoClock();
+}
+
+function updateDemoClock(){
+  demoClock.textContent = formatTime(demoRemaining);
+  const pct = 100 - (demoRemaining / demoDuration) * 100;
+  demoBarFill.style.width = pct + '%';
+  demoTimerWrap.classList.toggle('warn', demoRemaining <= 10 && demoRemaining > 0);
+}
+
+function stopDemoTimer(){
+  demoRunning = false;
+  clearInterval(demoTimerId);
+  demoStartBtn.textContent = 'Start';
+}
+
+function startDemoTimer(){
+  if(demoRunning){ stopDemoTimer(); return; }
+  if(demoRemaining <= 0) demoRemaining = demoDuration;
+  demoRunning = true;
+  demoStartBtn.textContent = 'Pause';
+  demoTimerId = setInterval(() => {
+    demoRemaining--;
+    updateDemoClock();
+    if(demoRemaining <= 0){
+      stopDemoTimer();
+      showToast("Time's up! Sign up to save attempts and get AI feedback.");
+    }
+  }, 1000);
+}
+
+demoStartBtn.addEventListener('click', startDemoTimer);
+demoDrawBtn.addEventListener('click', drawDemoTopic);
 
 /* ---- Decks ---- */
 let currentUser = null;
@@ -338,6 +440,7 @@ manageDecksBtn.addEventListener('click', () => {
   decksPanel.classList.toggle('hidden');
   historyPanel.classList.add('hidden');
   completedPanel.classList.add('hidden');
+  progressPanel.classList.add('hidden');
   if(!decksPanel.classList.contains('hidden')) loadUserDecks();
 });
 closeDecksBtn.addEventListener('click', () => decksPanel.classList.add('hidden'));
@@ -361,6 +464,7 @@ completedBtn.addEventListener('click', () => {
   completedPanel.classList.toggle('hidden');
   decksPanel.classList.add('hidden');
   historyPanel.classList.add('hidden');
+  progressPanel.classList.add('hidden');
   if(!completedPanel.classList.contains('hidden')) renderCompletedList();
 });
 closeCompletedBtn.addEventListener('click', () => completedPanel.classList.add('hidden'));
@@ -870,6 +974,7 @@ historyBtn.addEventListener('click', () => {
   historyPanel.classList.toggle('hidden');
   decksPanel.classList.add('hidden');
   completedPanel.classList.add('hidden');
+  progressPanel.classList.add('hidden');
   if(!historyPanel.classList.contains('hidden')){
     const now = new Date();
     calYear = now.getFullYear();
@@ -946,6 +1051,164 @@ async function renderCalendar(){
 
   calSummary.textContent = total + ' topic' + (total === 1 ? '' : 's') +
     ' completed in ' + monthNames[calMonth];
+}
+
+/* ---- Progress panel: streaks + score trend chart ---- */
+const progressBtn = document.getElementById('progressBtn');
+const progressPanel = document.getElementById('progressPanel');
+const closeProgressBtn = document.getElementById('closeProgressBtn');
+const currentStreakNum = document.getElementById('currentStreakNum');
+const longestStreakNum = document.getElementById('longestStreakNum');
+const totalSessionsNum = document.getElementById('totalSessionsNum');
+const chartWrap = document.getElementById('chartWrap');
+const chartLegend = document.getElementById('chartLegend');
+
+const CHART_METRICS = [
+  { key: 'clarity', label: 'Clarity' },
+  { key: 'structure', label: 'Structure' },
+  { key: 'pacing', label: 'Pacing' },
+  { key: 'filler_words', label: 'Filler words' }
+];
+const chartHiddenMetrics = new Set();
+let lastProgressRows = [];
+
+progressBtn.addEventListener('click', () => {
+  progressPanel.classList.toggle('hidden');
+  decksPanel.classList.add('hidden');
+  historyPanel.classList.add('hidden');
+  completedPanel.classList.add('hidden');
+  if(!progressPanel.classList.contains('hidden')) loadProgress();
+});
+closeProgressBtn.addEventListener('click', () => progressPanel.classList.add('hidden'));
+
+function dateKey(d){
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+
+function computeStreaks(dates){
+  if(dates.length === 0) return { current: 0, longest: 0 };
+  const daySet = new Set(dates.map(dateKey));
+  const uniqueDays = Array.from(daySet).map(k => {
+    const [y, m, d] = k.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }).sort((a, b) => a - b);
+
+  let longest = 1, run = 1;
+  for(let i = 1; i < uniqueDays.length; i++){
+    const diffDays = Math.round((uniqueDays[i] - uniqueDays[i - 1]) / 86400000);
+    run = diffDays === 1 ? run + 1 : 1;
+    longest = Math.max(longest, run);
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const cursor = new Date(today);
+  if(!daySet.has(dateKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  let current = 0;
+  while(daySet.has(dateKey(cursor))){
+    current++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return { current, longest };
+}
+
+async function loadProgress(){
+  chartWrap.innerHTML = '<div class="chart-skel skel"></div>';
+  chartLegend.innerHTML = '';
+  currentStreakNum.textContent = '—';
+  longestStreakNum.textContent = '—';
+  totalSessionsNum.textContent = '—';
+
+  const [completionsRes, evaluationsRes] = await Promise.all([
+    sb.from('completions').select('completed_at').order('completed_at', { ascending: true }),
+    sb.from('evaluations').select('scores, created_at').order('created_at', { ascending: true })
+  ]);
+
+  if(completionsRes.error){
+    showToast(completionsRes.error.message, true);
+  }else{
+    const streaks = computeStreaks((completionsRes.data || []).map(r => new Date(r.completed_at)));
+    currentStreakNum.textContent = streaks.current;
+    longestStreakNum.textContent = streaks.longest;
+  }
+
+  if(evaluationsRes.error){
+    showToast(evaluationsRes.error.message, true);
+    chartWrap.innerHTML = '<p class="empty-note">Could not load your progress.</p>';
+    return;
+  }
+
+  const rows = (evaluationsRes.data || []).filter(r => r.scores);
+  totalSessionsNum.textContent = rows.length;
+
+  if(rows.length === 0){
+    chartWrap.innerHTML = '<p class="empty-note">Complete a few practice sessions to see your trend line here.</p>';
+    return;
+  }
+
+  renderChartLegend();
+  renderChart(rows);
+}
+
+function renderChartLegend(){
+  chartLegend.innerHTML = CHART_METRICS.map(m => {
+    const off = chartHiddenMetrics.has(m.key) ? ' off' : '';
+    return '<span class="legend-item' + off + '" data-metric="' + m.key + '">' +
+      '<span class="legend-swatch ' + m.key + '"></span>' + m.label + '</span>';
+  }).join('');
+  chartLegend.querySelectorAll('.legend-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const key = el.dataset.metric;
+      if(chartHiddenMetrics.has(key)) chartHiddenMetrics.delete(key);
+      else chartHiddenMetrics.add(key);
+      renderChartLegend();
+      renderChart(lastProgressRows);
+    });
+  });
+}
+
+function renderChart(rows){
+  lastProgressRows = rows;
+  const W = 640, H = 220, padL = 26, padR = 10, padT = 14, padB = 10;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const n = rows.length;
+  const xFor = i => padL + (n === 1 ? innerW / 2 : (i / (n - 1)) * innerW);
+  const yFor = v => padT + innerH - (Math.max(0, Math.min(10, v)) / 10) * innerH;
+
+  let gridLines = '';
+  for(let g = 0; g <= 10; g += 2){
+    const y = yFor(g);
+    gridLines += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '" stroke="#ffffff14" stroke-width="1"/>';
+    gridLines += '<text x="' + (padL - 6) + '" y="' + (y + 3) + '" text-anchor="end" font-size="9" fill="#8a8a85" font-family="IBM Plex Mono, monospace">' + g + '</text>';
+  }
+
+  const dashPatterns = { clarity: 'none', structure: '7,4', pacing: '2,4', filler_words: '10,3,2,3' };
+  const opacities = { clarity: 1, structure: 0.85, pacing: 0.85, filler_words: 0.65 };
+
+  let paths = '';
+  CHART_METRICS.forEach(m => {
+    if(chartHiddenMetrics.has(m.key)) return;
+    const pts = rows.map((r, i) => {
+      const v = r.scores ? r.scores[m.key] : null;
+      return (v === null || v === undefined) ? null : [xFor(i), yFor(v)];
+    });
+    let d = '';
+    let started = false;
+    pts.forEach(p => {
+      if(!p){ started = false; return; }
+      d += (started ? ' L ' : 'M ') + p[0].toFixed(1) + ' ' + p[1].toFixed(1);
+      started = true;
+    });
+    if(!d) return;
+    paths += '<path d="' + d + '" fill="none" stroke="#f5f4f0" stroke-width="2" ' +
+      'stroke-dasharray="' + dashPatterns[m.key] + '" opacity="' + opacities[m.key] + '" ' +
+      'stroke-linecap="round" stroke-linejoin="round"/>';
+    pts.forEach(p => {
+      if(p) paths += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2.6" fill="#f5f4f0" opacity="' + opacities[m.key] + '"/>';
+    });
+  });
+
+  chartWrap.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="progress-chart">' + gridLines + paths + '</svg>';
 }
 
 updateClock();
