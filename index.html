@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Speak — impromptu practice</title>
+<title>Speak More</title>
+<meta name="description" content="A minimalist timed speaking practice app. Draw a prompt, speak against the clock, and track your progress over time.">
+<meta name="theme-color" content="#0a0a0a">
+<meta property="og:title" content="Speak — impromptu practice">
+<meta property="og:description" content="A minimalist timed speaking practice app. Draw a prompt, speak against the clock, and track your progress over time.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230a0a0a'/%3E%3Crect x='7' y='13' width='3' height='6' rx='1.5' fill='%23f5f4f0'/%3E%3Crect x='14.5' y='7' width='3' height='18' rx='1.5' fill='%23f5f4f0'/%3E%3Crect x='22' y='11' width='3' height='10' rx='1.5' fill='%23f5f4f0'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -51,12 +57,10 @@
     <select id="deckSelect">
       <option value="default">Default deck</option>
     </select>
-    <span>
-      <span class="link" id="manageDecksBtn">Manage decks</span>
-      &nbsp;·&nbsp;
-      <span class="link" id="completedBtn">Completed</span>
-      &nbsp;·&nbsp;
-      <span class="link" id="historyBtn">History</span>
+    <span class="btn-row deck-row-btns">
+      <button class="btn-sm" id="manageDecksBtn">Manage decks</button>
+      <button class="btn-sm" id="completedBtn">Completed</button>
+      <button class="btn-sm" id="historyBtn">History</button>
     </span>
   </div>
 
@@ -80,7 +84,6 @@
       </div>
     </div>
 
-    <div class="panel-msg" id="decksPanelMsg"></div>
     <div style="margin-top:16px;"><span class="link" id="closeDecksBtn">Close</span></div>
   </div>
 
@@ -102,7 +105,6 @@
   <div class="decks-panel hidden" id="completedPanel">
     <h2>Completed — <span id="completedDeckName">Default deck</span></h2>
     <ul class="topic-list" id="completedList"></ul>
-    <div class="panel-msg" id="completedPanelMsg"></div>
     <div style="margin-top:16px;"><span class="link" id="closeCompletedBtn">Close</span></div>
   </div>
 
@@ -152,6 +154,20 @@
 
   <div class="error-msg" id="errorMsg"></div>
 </div>
+
+<!-- Custom confirm modal (replaces window.confirm) -->
+<div class="modal-overlay hidden" id="confirmOverlay">
+  <div class="modal-box">
+    <p class="modal-text" id="confirmText"></p>
+    <div class="modal-actions">
+      <button id="confirmCancelBtn">Cancel</button>
+      <button class="danger" id="confirmOkBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notifications -->
+<div class="toast-container" id="toastContainer"></div>
 
 <script src="app.js"></script>
 </body>

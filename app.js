@@ -3,6 +3,56 @@ const SUPABASE_URL = 'https://epetjjagenqmezgbdyxk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_Nrs1bv1Hz9g_G3j0R5zBdA_JiTkx-8Z';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+/* ---- Toast notifications ---- */
+const toastContainer = document.getElementById('toastContainer');
+
+function showToast(text, isErr){
+  if(!text) return;
+  const el = document.createElement('div');
+  el.className = 'toast' + (isErr ? ' err' : '');
+  el.textContent = text;
+  toastContainer.appendChild(el);
+  const dismiss = () => {
+    el.classList.add('leaving');
+    setTimeout(() => el.remove(), 200);
+  };
+  const timer = setTimeout(dismiss, 3400);
+  el.addEventListener('click', () => { clearTimeout(timer); dismiss(); });
+}
+
+/* ---- Custom confirm modal (replaces window.confirm) ---- */
+const confirmOverlay = document.getElementById('confirmOverlay');
+const confirmText = document.getElementById('confirmText');
+const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+const confirmOkBtn = document.getElementById('confirmOkBtn');
+let confirmResolver = null;
+
+function customConfirm(message){
+  confirmText.textContent = message;
+  confirmOverlay.classList.remove('hidden');
+  return new Promise(resolve => { confirmResolver = resolve; });
+}
+function closeConfirm(result){
+  confirmOverlay.classList.add('hidden');
+  if(confirmResolver){ confirmResolver(result); confirmResolver = null; }
+}
+confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
+confirmOkBtn.addEventListener('click', () => closeConfirm(true));
+confirmOverlay.addEventListener('click', (e) => { if(e.target === confirmOverlay) closeConfirm(false); });
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && !confirmOverlay.classList.contains('hidden')) closeConfirm(false);
+});
+
+/* ---- Skeleton loading helpers ---- */
+function skeletonListHTML(count, widths){
+  let html = '';
+  for(let i = 0; i < count; i++){
+    const w = widths[i % widths.length];
+    html += '<li class="skel-item"><span class="skel skel-line" style="width:' + w + '"></span></li>';
+  }
+  return html;
+}
+
 let authMode = 'login'; // 'login' | 'signup'
 
 const authStage = document.getElementById('authStage');
@@ -122,15 +172,16 @@ const deckTopicList = document.getElementById('deckTopicList');
 const newTopicText = document.getElementById('newTopicText');
 const newTopicCategory = document.getElementById('newTopicCategory');
 const addTopicBtn = document.getElementById('addTopicBtn');
-const decksPanelMsg = document.getElementById('decksPanelMsg');
 const closeDecksBtn = document.getElementById('closeDecksBtn');
 
 function setPanelMsg(text, isErr){
-  decksPanelMsg.textContent = text || '';
-  decksPanelMsg.classList.toggle('err', !!isErr);
+  showToast(text, isErr);
 }
 
 async function loadUserDecks(){
+  if(!decksPanel.classList.contains('hidden')){
+    deckList.innerHTML = skeletonListHTML(3, ['60%', '45%', '70%']);
+  }
   const { data, error } = await sb
     .from('decks')
     .select('id, name')
@@ -204,7 +255,8 @@ async function createDeck(){
 }
 
 async function deleteDeck(deckId){
-  if(!confirm('Delete this deck and all its topics?')) return;
+  const ok = await customConfirm('Delete this deck and all its topics?');
+  if(!ok) return;
   const { error } = await sb.from('decks').delete().eq('id', deckId);
   if(error){ setPanelMsg(error.message, true); return; }
   if(panelSelectedDeckId === deckId){
@@ -228,7 +280,7 @@ async function openDeckTopics(deckId, name){
 }
 
 async function renderDeckTopicList(){
-  deckTopicList.innerHTML = '<li><span class="empty-note">Loading…</span></li>';
+  deckTopicList.innerHTML = skeletonListHTML(3, ['78%', '55%', '65%']);
   const { data, error } = await sb
     .from('topics')
     .select('id, text, category')
@@ -303,7 +355,6 @@ const completedBtn = document.getElementById('completedBtn');
 const completedPanel = document.getElementById('completedPanel');
 const completedDeckName = document.getElementById('completedDeckName');
 const completedList = document.getElementById('completedList');
-const completedPanelMsg = document.getElementById('completedPanelMsg');
 const closeCompletedBtn = document.getElementById('closeCompletedBtn');
 
 completedBtn.addEventListener('click', () => {
@@ -315,8 +366,7 @@ completedBtn.addEventListener('click', () => {
 closeCompletedBtn.addEventListener('click', () => completedPanel.classList.add('hidden'));
 
 function setCompletedMsg(text, isErr){
-  completedPanelMsg.textContent = text || '';
-  completedPanelMsg.classList.toggle('err', !!isErr);
+  showToast(text, isErr);
 }
 
 async function renderCompletedList(){
@@ -324,7 +374,7 @@ async function renderCompletedList(){
     ? deckSelect.options[deckSelect.selectedIndex].textContent
     : 'Default deck';
   completedDeckName.textContent = deckLabel;
-  completedList.innerHTML = '<li><span class="empty-note">Loading…</span></li>';
+  completedList.innerHTML = skeletonListHTML(4, ['70%', '85%', '60%', '75%']);
   setCompletedMsg('');
 
   let query = sb
@@ -388,6 +438,7 @@ async function loadActiveDeckTopics(){
   startBtn.disabled = true;
   drawBtn.disabled = true;
   completeBtn.disabled = true;
+  showTopicSkeleton();
   const { data, error } = await sb
     .from('topics')
     .select('id, category, text')
@@ -420,7 +471,21 @@ async function fetchCompletedKeys(deckId){
   return new Set((data || []).map(r => r.topic_key));
 }
 
+function showTopicSkeleton(){
+  categoryLabel.classList.add('skel');
+  categoryLabel.textContent = '';
+  cardEl.classList.remove('animate');
+  topicText.classList.add('skel-topic');
+  topicText.innerHTML = '<span class="skel"></span><span class="skel"></span>';
+}
+
+function hideTopicSkeleton(){
+  categoryLabel.classList.remove('skel');
+  topicText.classList.remove('skel-topic');
+}
+
 function handleEmptyDeck(message){
+  hideTopicSkeleton();
   errorMsg.classList.remove('show');
   categoryLabel.textContent = 'all done';
   topicText.textContent = message;
@@ -432,6 +497,7 @@ function handleEmptyDeck(message){
 }
 
 function finishLoadingTopics(){
+  hideTopicSkeleton();
   newDeck();
   errorMsg.classList.remove('show');
   statusText.textContent = 'ready';
@@ -623,7 +689,7 @@ function setEvalNote(text){
 function setEvalLoading(){
   evalBody.innerHTML = '<p class="eval-loading">Evaluating your response…</p>';
 }
-function renderEvalResult(scores, feedback){
+function renderEvalResult(scores, feedback, example){
   const dims = [
     ['clarity', 'Clarity'],
     ['structure', 'Structure'],
@@ -641,7 +707,10 @@ function renderEvalResult(scores, feedback){
       '</span><div class="eval-bar"><div class="eval-bar-fill" style="width:' + pct + '%"></div></div>' +
       '<span class="eval-score">' + val + '/10</span></div>';
   }).join('');
-  evalBody.innerHTML = rows + '<p class="eval-feedback">' + escapeHtml(feedback || '') + '</p>';
+  const exampleHtml = example && example.trim()
+    ? '<div class="eval-example"><span class="eval-example-label">Try something like</span><p>' + escapeHtml(example) + '</p></div>'
+    : '';
+  evalBody.innerHTML = rows + '<p class="eval-feedback">' + escapeHtml(feedback || '') + '</p>' + exampleHtml;
 }
 
 async function evaluateAttempt(topic, transcript, deckId, completionId, wasSpeechSupported, wasMicDenied, elapsedSeconds){
@@ -671,7 +740,7 @@ async function evaluateAttempt(topic, transcript, deckId, completionId, wasSpeec
     return;
   }
 
-  renderEvalResult(data.scores, data.feedback);
+  renderEvalResult(data.scores, data.feedback, data.example);
 
   await sb.from('evaluations').insert({
     user_id: currentUser.id,
@@ -682,7 +751,8 @@ async function evaluateAttempt(topic, transcript, deckId, completionId, wasSpeec
     topic_text: topic.text,
     transcript,
     scores: data.scores,
-    feedback: data.feedback || ''
+    feedback: data.feedback || '',
+    example: data.example || ''
   });
 }
 
@@ -735,6 +805,7 @@ async function markComplete(){
 completeBtn.addEventListener('click', markComplete);
 
 function showError(message){
+  hideTopicSkeleton();
   errorMsg.innerHTML = message;
   errorMsg.classList.add('show');
   topicText.textContent = 'Could not load topics';
@@ -742,6 +813,7 @@ function showError(message){
 }
 
 async function loadDefaultTopics(){
+  showTopicSkeleton();
   try{
     const res = await fetch('topics.json', { cache: 'no-store' });
     if(!res.ok) throw new Error('HTTP ' + res.status);
@@ -819,7 +891,9 @@ nextMonthBtn.addEventListener('click', () => {
 
 async function renderCalendar(){
   calMonthLabel.textContent = monthNames[calMonth] + ' ' + calYear;
-  calGrid.innerHTML = '<div class="empty-note" style="grid-column:1/-1;text-align:center;">Loading…</div>';
+  calGrid.innerHTML = Array.from({ length: 35 }).map(() =>
+    '<div class="cal-day skel-day"><span class="skel"></span></div>'
+  ).join('');
 
   const startOfMonth = new Date(calYear, calMonth, 1);
   const startOfNextMonth = new Date(calYear, calMonth + 1, 1);
