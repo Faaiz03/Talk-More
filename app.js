@@ -6,8 +6,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 /* ---- Toast notifications ---- */
 const toastContainer = document.getElementById('toastContainer');
 
-function showToast(text, isErr){
-  if(!text) return;
+function showToast(text, isErr) {
+  if (!text) return;
   const el = document.createElement('div');
   el.className = 'toast' + (isErr ? ' err' : '');
   el.textContent = text;
@@ -27,26 +27,26 @@ const confirmCancelBtn = document.getElementById('confirmCancelBtn');
 const confirmOkBtn = document.getElementById('confirmOkBtn');
 let confirmResolver = null;
 
-function customConfirm(message){
+function customConfirm(message) {
   confirmText.textContent = message;
   confirmOverlay.classList.remove('hidden');
   return new Promise(resolve => { confirmResolver = resolve; });
 }
-function closeConfirm(result){
+function closeConfirm(result) {
   confirmOverlay.classList.add('hidden');
-  if(confirmResolver){ confirmResolver(result); confirmResolver = null; }
+  if (confirmResolver) { confirmResolver(result); confirmResolver = null; }
 }
 confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
 confirmOkBtn.addEventListener('click', () => closeConfirm(true));
-confirmOverlay.addEventListener('click', (e) => { if(e.target === confirmOverlay) closeConfirm(false); });
+confirmOverlay.addEventListener('click', (e) => { if (e.target === confirmOverlay) closeConfirm(false); });
 document.addEventListener('keydown', (e) => {
-  if(e.key === 'Escape' && !confirmOverlay.classList.contains('hidden')) closeConfirm(false);
+  if (e.key === 'Escape' && !confirmOverlay.classList.contains('hidden')) closeConfirm(false);
 });
 
 /* ---- Skeleton loading helpers ---- */
-function skeletonListHTML(count, widths){
+function skeletonListHTML(count, widths) {
   let html = '';
-  for(let i = 0; i < count; i++){
+  for (let i = 0; i < count; i++) {
     const w = widths[i % widths.length];
     html += '<li class="skel-item"><span class="skel skel-line" style="width:' + w + '"></span></li>';
   }
@@ -70,22 +70,22 @@ const authMsg = document.getElementById('authMsg');
 const userEmail = document.getElementById('userEmail');
 const logoutBtn = document.getElementById('logoutBtn');
 
-function setAuthMsg(text, type){
+function setAuthMsg(text, type) {
   authMsg.textContent = text || '';
   authMsg.classList.remove('err', 'ok');
-  if(type) authMsg.classList.add(type);
+  if (type) authMsg.classList.add(type);
 }
 
-function setAuthMode(mode){
+function setAuthMode(mode) {
   authMode = mode;
   setAuthMsg('');
-  if(mode === 'login'){
+  if (mode === 'login') {
     authTitle.textContent = 'Welcome back';
     authSub.textContent = 'Log in to save your practice history and decks.';
     authSubmitBtn.textContent = 'Log in';
     authSwitchText.textContent = "Don't have an account?";
     authSwitchBtn.textContent = 'Sign up';
-  }else{
+  } else {
     authTitle.textContent = 'Create an account';
     authSub.textContent = 'Save decks and track your practice over time.';
     authSubmitBtn.textContent = 'Sign up';
@@ -101,22 +101,22 @@ authSwitchBtn.addEventListener('click', () => {
 authSubmitBtn.addEventListener('click', async () => {
   const email = authEmail.value.trim();
   const password = authPassword.value;
-  if(!email || !password){
+  if (!email || !password) {
     setAuthMsg('Enter both email and password.', 'err');
     return;
   }
   authSubmitBtn.disabled = true;
   setAuthMsg(authMode === 'login' ? 'Logging in…' : 'Creating account…');
 
-  if(authMode === 'login'){
+  if (authMode === 'login') {
     const { error } = await sb.auth.signInWithPassword({ email, password });
     authSubmitBtn.disabled = false;
-    if(error){ setAuthMsg(error.message, 'err'); return; }
+    if (error) { setAuthMsg(error.message, 'err'); return; }
     // onAuthStateChange will handle showing the app
-  }else{
+  } else {
     const { error } = await sb.auth.signUp({ email, password });
     authSubmitBtn.disabled = false;
-    if(error){ setAuthMsg(error.message, 'err'); return; }
+    if (error) { setAuthMsg(error.message, 'err'); return; }
     setAuthMsg('Account created. Check your email to confirm, then log in.', 'ok');
     setAuthMode('login');
   }
@@ -126,43 +126,43 @@ logoutBtn.addEventListener('click', async () => {
   await sb.auth.signOut();
 });
 
-function showLandingScreen(){
+function showLandingScreen() {
   landingStage.classList.remove('hidden');
   authStage.classList.add('hidden');
   appStage.classList.add('hidden');
   initDemo();
 }
 
-function showAuthScreen(){
+function showAuthScreen() {
   landingStage.classList.add('hidden');
   authStage.classList.remove('hidden');
   appStage.classList.add('hidden');
 }
 
-function showAppScreen(user){
+function showAppScreen(user) {
   landingStage.classList.add('hidden');
   authStage.classList.add('hidden');
   appStage.classList.remove('hidden');
   userEmail.textContent = user.email;
   currentUser = user;
   loadUserDecks();
-  if(topics.length === 0) loadActiveDeckTopics();
+  if (topics.length === 0) loadActiveDeckTopics();
 }
 
 authBackBtn.addEventListener('click', showLandingScreen);
 
 sb.auth.onAuthStateChange((event, session) => {
-  if(session && session.user){
+  if (session && session.user) {
     showAppScreen(session.user);
-  }else{
+  } else {
     showLandingScreen();
   }
 });
 
 sb.auth.getSession().then(({ data }) => {
-  if(data.session && data.session.user){
+  if (data.session && data.session.user) {
     showAppScreen(data.session.user);
-  }else{
+  } else {
     showLandingScreen();
   }
 });
@@ -196,24 +196,24 @@ let demoTimerId = null;
 let demoRunning = false;
 let demoInitialized = false;
 
-async function initDemo(){
-  if(demoInitialized) return;
+async function initDemo() {
+  if (demoInitialized) return;
   demoInitialized = true;
-  try{
+  try {
     const res = await fetch('topics.json', { cache: 'no-store' });
     const data = await res.json();
     demoTopics = data.map(([category, text]) => ({ category, text }));
     demoDeck = shuffle(demoTopics);
     demoDeckIndex = 0;
     drawDemoTopic();
-  }catch(err){
+  } catch (err) {
     demoTopicText.textContent = "Couldn't load a preview topic — sign up to use the full app.";
   }
 }
 
-function drawDemoTopic(){
-  if(demoDeck.length === 0) return;
-  if(demoDeckIndex >= demoDeck.length){ demoDeck = shuffle(demoTopics); demoDeckIndex = 0; }
+function drawDemoTopic() {
+  if (demoDeck.length === 0) return;
+  if (demoDeckIndex >= demoDeck.length) { demoDeck = shuffle(demoTopics); demoDeckIndex = 0; }
   const t = demoDeck[demoDeckIndex++];
   demoCategoryLabel.textContent = t.category;
   demoTopicText.textContent = t.text;
@@ -225,28 +225,28 @@ function drawDemoTopic(){
   updateDemoClock();
 }
 
-function updateDemoClock(){
+function updateDemoClock() {
   demoClock.textContent = formatTime(demoRemaining);
   const pct = 100 - (demoRemaining / demoDuration) * 100;
   demoBarFill.style.width = pct + '%';
   demoTimerWrap.classList.toggle('warn', demoRemaining <= 10 && demoRemaining > 0);
 }
 
-function stopDemoTimer(){
+function stopDemoTimer() {
   demoRunning = false;
   clearInterval(demoTimerId);
   demoStartBtn.textContent = 'Start';
 }
 
-function startDemoTimer(){
-  if(demoRunning){ stopDemoTimer(); return; }
-  if(demoRemaining <= 0) demoRemaining = demoDuration;
+function startDemoTimer() {
+  if (demoRunning) { stopDemoTimer(); return; }
+  if (demoRemaining <= 0) demoRemaining = demoDuration;
   demoRunning = true;
   demoStartBtn.textContent = 'Pause';
   demoTimerId = setInterval(() => {
     demoRemaining--;
     updateDemoClock();
-    if(demoRemaining <= 0){
+    if (demoRemaining <= 0) {
       stopDemoTimer();
       showToast("Time's up! Sign up to save attempts and get AI feedback.");
     }
@@ -276,25 +276,25 @@ const newTopicCategory = document.getElementById('newTopicCategory');
 const addTopicBtn = document.getElementById('addTopicBtn');
 const closeDecksBtn = document.getElementById('closeDecksBtn');
 
-function setPanelMsg(text, isErr){
+function setPanelMsg(text, isErr) {
   showToast(text, isErr);
 }
 
-async function loadUserDecks(){
-  if(!decksPanel.classList.contains('hidden')){
+async function loadUserDecks() {
+  if (!decksPanel.classList.contains('hidden')) {
     deckList.innerHTML = skeletonListHTML(3, ['60%', '45%', '70%']);
   }
   const { data, error } = await sb
     .from('decks')
     .select('id, name')
     .order('created_at', { ascending: true });
-  if(error){ setPanelMsg(error.message, true); return; }
+  if (error) { setPanelMsg(error.message, true); return; }
   userDecks = data || [];
   renderDeckSelect();
   renderDeckList();
 }
 
-function renderDeckSelect(){
+function renderDeckSelect() {
   const prev = deckSelect.value;
   deckSelect.innerHTML = '<option value="default">Default deck</option>';
   userDecks.forEach(d => {
@@ -308,9 +308,9 @@ function renderDeckSelect(){
   selectedDeckId = deckSelect.value;
 }
 
-function renderDeckList(){
+function renderDeckList() {
   deckList.innerHTML = '';
-  if(userDecks.length === 0){
+  if (userDecks.length === 0) {
     const li = document.createElement('li');
     li.innerHTML = '<span class="empty-note">No custom decks yet — create one below.</span>';
     deckList.appendChild(li);
@@ -339,9 +339,9 @@ function renderDeckList(){
   });
 }
 
-async function createDeck(){
+async function createDeck() {
   const name = newDeckName.value.trim();
-  if(!name){ setPanelMsg('Enter a deck name.', true); return; }
+  if (!name) { setPanelMsg('Enter a deck name.', true); return; }
   createDeckBtn.disabled = true;
   const { data, error } = await sb
     .from('decks')
@@ -349,31 +349,31 @@ async function createDeck(){
     .select('id, name')
     .single();
   createDeckBtn.disabled = false;
-  if(error){ setPanelMsg(error.message, true); return; }
+  if (error) { setPanelMsg(error.message, true); return; }
   newDeckName.value = '';
   setPanelMsg('Deck created.');
   await loadUserDecks();
   openDeckTopics(data.id, data.name);
 }
 
-async function deleteDeck(deckId){
+async function deleteDeck(deckId) {
   const ok = await customConfirm('Delete this deck and all its topics?');
-  if(!ok) return;
+  if (!ok) return;
   const { error } = await sb.from('decks').delete().eq('id', deckId);
-  if(error){ setPanelMsg(error.message, true); return; }
-  if(panelSelectedDeckId === deckId){
+  if (error) { setPanelMsg(error.message, true); return; }
+  if (panelSelectedDeckId === deckId) {
     panelSelectedDeckId = null;
     deckTopicsSection.classList.add('hidden');
   }
   await loadUserDecks();
-  if(selectedDeckId === deckId){
+  if (selectedDeckId === deckId) {
     selectedDeckId = 'default';
     deckSelect.value = 'default';
     loadActiveDeckTopics();
   }
 }
 
-async function openDeckTopics(deckId, name){
+async function openDeckTopics(deckId, name) {
   panelSelectedDeckId = deckId;
   deckTopicsTitle.textContent = 'Topics in "' + name + '"';
   deckTopicsSection.classList.remove('hidden');
@@ -381,16 +381,16 @@ async function openDeckTopics(deckId, name){
   await renderDeckTopicList();
 }
 
-async function renderDeckTopicList(){
+async function renderDeckTopicList() {
   deckTopicList.innerHTML = skeletonListHTML(3, ['78%', '55%', '65%']);
   const { data, error } = await sb
     .from('topics')
     .select('id, text, category')
     .eq('deck_id', panelSelectedDeckId)
     .order('created_at', { ascending: true });
-  if(error){ setPanelMsg(error.message, true); return; }
+  if (error) { setPanelMsg(error.message, true); return; }
   deckTopicList.innerHTML = '';
-  if(!data || data.length === 0){
+  if (!data || data.length === 0) {
     const li = document.createElement('li');
     li.innerHTML = '<span class="empty-note">No topics yet — add one below.</span>';
     deckTopicList.appendChild(li);
@@ -411,29 +411,29 @@ async function renderDeckTopicList(){
   });
 }
 
-async function addTopicToDeck(){
+async function addTopicToDeck() {
   const text = newTopicText.value.trim();
   const category = newTopicCategory.value.trim() || 'custom';
-  if(!text){ setPanelMsg('Enter topic text.', true); return; }
-  if(!panelSelectedDeckId){ setPanelMsg('Select a deck first.', true); return; }
+  if (!text) { setPanelMsg('Enter topic text.', true); return; }
+  if (!panelSelectedDeckId) { setPanelMsg('Select a deck first.', true); return; }
   addTopicBtn.disabled = true;
   const { error } = await sb
     .from('topics')
     .insert({ deck_id: panelSelectedDeckId, text, category });
   addTopicBtn.disabled = false;
-  if(error){ setPanelMsg(error.message, true); return; }
+  if (error) { setPanelMsg(error.message, true); return; }
   newTopicText.value = '';
   newTopicCategory.value = '';
   setPanelMsg('Topic added.');
   await renderDeckTopicList();
-  if(selectedDeckId === panelSelectedDeckId) loadActiveDeckTopics();
+  if (selectedDeckId === panelSelectedDeckId) loadActiveDeckTopics();
 }
 
-async function deleteTopic(topicId){
+async function deleteTopic(topicId) {
   const { error } = await sb.from('topics').delete().eq('id', topicId);
-  if(error){ setPanelMsg(error.message, true); return; }
+  if (error) { setPanelMsg(error.message, true); return; }
   await renderDeckTopicList();
-  if(selectedDeckId === panelSelectedDeckId) loadActiveDeckTopics();
+  if (selectedDeckId === panelSelectedDeckId) loadActiveDeckTopics();
 }
 
 manageDecksBtn.addEventListener('click', () => {
@@ -441,7 +441,7 @@ manageDecksBtn.addEventListener('click', () => {
   historyPanel.classList.add('hidden');
   completedPanel.classList.add('hidden');
   progressPanel.classList.add('hidden');
-  if(!decksPanel.classList.contains('hidden')) loadUserDecks();
+  if (!decksPanel.classList.contains('hidden')) loadUserDecks();
 });
 closeDecksBtn.addEventListener('click', () => decksPanel.classList.add('hidden'));
 createDeckBtn.addEventListener('click', createDeck);
@@ -450,7 +450,7 @@ addTopicBtn.addEventListener('click', addTopicToDeck);
 deckSelect.addEventListener('change', () => {
   selectedDeckId = deckSelect.value;
   loadActiveDeckTopics();
-  if(!completedPanel.classList.contains('hidden')) renderCompletedList();
+  if (!completedPanel.classList.contains('hidden')) renderCompletedList();
 });
 
 /* ---- Completed topics ---- */
@@ -465,15 +465,15 @@ completedBtn.addEventListener('click', () => {
   decksPanel.classList.add('hidden');
   historyPanel.classList.add('hidden');
   progressPanel.classList.add('hidden');
-  if(!completedPanel.classList.contains('hidden')) renderCompletedList();
+  if (!completedPanel.classList.contains('hidden')) renderCompletedList();
 });
 closeCompletedBtn.addEventListener('click', () => completedPanel.classList.add('hidden'));
 
-function setCompletedMsg(text, isErr){
+function setCompletedMsg(text, isErr) {
   showToast(text, isErr);
 }
 
-async function renderCompletedList(){
+async function renderCompletedList() {
   const deckLabel = deckSelect.options[deckSelect.selectedIndex]
     ? deckSelect.options[deckSelect.selectedIndex].textContent
     : 'Default deck';
@@ -488,10 +488,10 @@ async function renderCompletedList(){
   query = selectedDeckId === 'default' ? query.is('deck_id', null) : query.eq('deck_id', selectedDeckId);
 
   const { data, error } = await query;
-  if(error){ setCompletedMsg(error.message, true); completedList.innerHTML = ''; return; }
+  if (error) { setCompletedMsg(error.message, true); completedList.innerHTML = ''; return; }
 
   completedList.innerHTML = '';
-  if(!data || data.length === 0){
+  if (!data || data.length === 0) {
     const li = document.createElement('li');
     li.innerHTML = '<span class="empty-note">No completed topics in this deck yet.</span>';
     completedList.appendChild(li);
@@ -525,16 +525,16 @@ async function renderCompletedList(){
   });
 }
 
-async function uncompleteTopic(completionId){
+async function uncompleteTopic(completionId) {
   const { error } = await sb.from('completions').delete().eq('id', completionId);
-  if(error){ setCompletedMsg(error.message, true); return; }
+  if (error) { setCompletedMsg(error.message, true); return; }
   setCompletedMsg('Moved back into rotation.');
   await renderCompletedList();
   loadActiveDeckTopics();
 }
 
-async function loadActiveDeckTopics(){
-  if(selectedDeckId === 'default'){
+async function loadActiveDeckTopics() {
+  if (selectedDeckId === 'default') {
     loadDefaultTopics();
     return;
   }
@@ -548,7 +548,7 @@ async function loadActiveDeckTopics(){
     .select('id, category, text')
     .eq('deck_id', selectedDeckId)
     .order('created_at', { ascending: true });
-  if(error){
+  if (error) {
     showError(error.message);
     return;
   }
@@ -556,26 +556,26 @@ async function loadActiveDeckTopics(){
   const completedKeys = await fetchCompletedKeys(selectedDeckId);
   topics = mapped.filter(t => !completedKeys.has(t.key));
 
-  if(mapped.length === 0){
+  if (mapped.length === 0) {
     handleEmptyDeck('This deck has no topics yet. Add some via "Manage decks".');
     return;
   }
-  if(topics.length === 0){
+  if (topics.length === 0) {
     handleEmptyDeck("You've completed every topic in this deck. Add more via \"Manage decks\".");
     return;
   }
   finishLoadingTopics();
 }
 
-async function fetchCompletedKeys(deckId){
+async function fetchCompletedKeys(deckId) {
   let query = sb.from('completions').select('topic_key');
   query = deckId === null ? query.is('deck_id', null) : query.eq('deck_id', deckId);
   const { data, error } = await query;
-  if(error) return new Set();
+  if (error) return new Set();
   return new Set((data || []).map(r => r.topic_key));
 }
 
-function showTopicSkeleton(){
+function showTopicSkeleton() {
   categoryLabel.classList.add('skel');
   categoryLabel.textContent = '';
   cardEl.classList.remove('animate');
@@ -583,12 +583,12 @@ function showTopicSkeleton(){
   topicText.innerHTML = '<span class="skel"></span><span class="skel"></span>';
 }
 
-function hideTopicSkeleton(){
+function hideTopicSkeleton() {
   categoryLabel.classList.remove('skel');
   topicText.classList.remove('skel-topic');
 }
 
-function handleEmptyDeck(message){
+function handleEmptyDeck(message) {
   hideTopicSkeleton();
   errorMsg.classList.remove('show');
   categoryLabel.textContent = 'all done';
@@ -600,7 +600,7 @@ function handleEmptyDeck(message){
   completeBtn.disabled = true;
 }
 
-function finishLoadingTopics(){
+function finishLoadingTopics() {
   hideTopicSkeleton();
   newDeck();
   errorMsg.classList.remove('show');
@@ -642,68 +642,87 @@ let recognition = null;
 let speechTranscript = '';
 let micDenied = false;
 
-if(speechSupported){
+let restartTimer = null;
+let rapidRestartCount = 0;
+let lastRecognitionStart = 0;
+
+if (speechSupported) {
   recognition = new SpeechRecognitionCtor();
   recognition.continuous = true;
   recognition.interimResults = false;
   recognition.lang = 'en-US';
 
   recognition.onresult = (e) => {
-    for(let i = e.resultIndex; i < e.results.length; i++){
-      if(e.results[i].isFinal){
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
         const chunk = e.results[i][0].transcript.trim();
-        if(chunk) speechTranscript += (speechTranscript ? ' ' : '') + chunk;
+        if (chunk) speechTranscript += (speechTranscript ? ' ' : '') + chunk;
       }
     }
   };
 
   recognition.onerror = (e) => {
-    if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
       micDenied = true;
     }
     // other errors (e.g. 'no-speech') are transient — onend below decides whether to restart
   };
 
   recognition.onend = () => {
-    // Chrome periodically ends recognition on its own (silence, ~60s caps).
-    // If the timer's still running and the mic wasn't denied, pick back up.
-    if(running && !micDenied){
-      try{ recognition.start(); }catch(e){ /* already running, ignore */ }
-    }
+    // Chrome on desktop periodically ends recognition on its own (silence, ~60s caps) —
+    // restarting right away is invisible there. On iOS (Chrome/Safari, both WebKit),
+    // sessions end every few seconds, so restarting instantly causes the mic
+    // permission indicator to flicker on/off. A short delay smooths that out, and a
+    // backoff stops us from looping forever if restarts keep failing immediately.
+    if (!running || micDenied) return;
+
+    const now = Date.now();
+    rapidRestartCount = (now - lastRecognitionStart < 1500) ? rapidRestartCount + 1 : 0;
+    if (rapidRestartCount > 6) return; // give up silently; keep whatever transcript we have
+
+    clearTimeout(restartTimer);
+    restartTimer = setTimeout(() => {
+      if (!running || micDenied) return;
+      lastRecognitionStart = Date.now();
+      try { recognition.start(); } catch (e) { /* already running, ignore */ }
+    }, 300);
   };
 }
 
-function beginSpeechCapture(){
-  if(!speechSupported) return;
-  try{ recognition.start(); }catch(e){ /* already started, ignore */ }
+function beginSpeechCapture() {
+  if (!speechSupported) return;
+  rapidRestartCount = 0;
+  lastRecognitionStart = Date.now();
+  try { recognition.start(); } catch (e) { /* already started, ignore */ }
 }
 
-function stopSpeechCapture(){
-  if(!speechSupported) return;
-  try{ recognition.stop(); }catch(e){ /* ignore */ }
+function stopSpeechCapture() {
+  if (!speechSupported) return;
+  clearTimeout(restartTimer);
+  try { recognition.stop(); } catch (e) { /* ignore */ }
 }
 
-function shuffle(arr){
+function shuffle(arr) {
   const a = arr.slice();
-  for(let i = a.length - 1; i > 0; i--){
+  for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
 
-function newDeck(){
+function newDeck() {
   deck = shuffle(topics);
   deckIndex = 0;
 }
 
-function formatTime(sec){
+function formatTime(sec) {
   const m = Math.floor(sec / 60).toString().padStart(2, '0');
   const s = Math.floor(sec % 60).toString().padStart(2, '0');
   return m + ':' + s;
 }
 
-function updateClock(){
+function updateClock() {
   clock.textContent = formatTime(remaining);
   const pct = 100 - (remaining / duration) * 100;
   barFill.style.width = pct + '%';
@@ -712,9 +731,9 @@ function updateClock(){
   timerWrap.classList.toggle('done', remaining === 0);
 }
 
-function drawTopic(){
-  if(topics.length === 0) return;
-  if(deckIndex >= deck.length) newDeck();
+function drawTopic() {
+  if (topics.length === 0) return;
+  if (deckIndex >= deck.length) newDeck();
   const t = deck[deckIndex];
   deckIndex++;
   currentTopic = t;
@@ -732,7 +751,7 @@ function drawTopic(){
   micDenied = false;
 }
 
-function stopTimer(){
+function stopTimer() {
   running = false;
   clearInterval(timerId);
   startBtn.textContent = 'Start';
@@ -741,21 +760,21 @@ function stopTimer(){
   stopSpeechCapture();
 }
 
-function tick(){
+function tick() {
   remaining--;
   updateClock();
-  if(remaining <= 0){
+  if (remaining <= 0) {
     stopTimer();
     statusText.textContent = "time's up";
   }
 }
 
-function startTimer(){
-  if(running){
+function startTimer() {
+  if (running) {
     stopTimer();
     return;
   }
-  if(remaining <= 0) remaining = duration;
+  if (remaining <= 0) remaining = duration;
   running = true;
   startBtn.textContent = 'Pause';
   statusDot.classList.add('live');
@@ -764,7 +783,7 @@ function startTimer(){
   beginSpeechCapture();
 }
 
-function enableControls(){
+function enableControls() {
   startBtn.disabled = false;
   drawBtn.disabled = false;
   completeBtn.disabled = false;
@@ -777,24 +796,24 @@ const closeEvalBtn = document.getElementById('closeEvalBtn');
 
 closeEvalBtn.addEventListener('click', hideEvalPanel);
 
-function showEvalPanel(){
+function showEvalPanel() {
   evalPanel.classList.remove('hidden');
 }
-function hideEvalPanel(){
+function hideEvalPanel() {
   evalPanel.classList.add('hidden');
 }
-function escapeHtml(str){
+function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
-function setEvalNote(text){
+function setEvalNote(text) {
   evalBody.innerHTML = '<p class="eval-note">' + escapeHtml(text) + '</p>';
 }
-function setEvalLoading(){
+function setEvalLoading() {
   evalBody.innerHTML = '<p class="eval-loading">Evaluating your response…</p>';
 }
-function renderEvalResult(scores, feedback, example){
+function renderEvalResult(scores, feedback, example) {
   const dims = [
     ['clarity', 'Clarity'],
     ['structure', 'Structure'],
@@ -803,7 +822,7 @@ function renderEvalResult(scores, feedback, example){
   ];
   const rows = dims.map(([key, label]) => {
     const val = scores ? scores[key] : null;
-    if(val === null || val === undefined){
+    if (val === null || val === undefined) {
       return '<div class="eval-row"><span class="eval-label">' + label +
         '</span><span></span><span class="eval-score">—</span></div>';
     }
@@ -818,18 +837,18 @@ function renderEvalResult(scores, feedback, example){
   evalBody.innerHTML = rows + '<p class="eval-feedback">' + escapeHtml(feedback || '') + '</p>' + exampleHtml;
 }
 
-async function evaluateAttempt(topic, transcript, deckId, completionId, wasSpeechSupported, wasMicDenied, elapsedSeconds){
+async function evaluateAttempt(topic, transcript, deckId, completionId, wasSpeechSupported, wasMicDenied, elapsedSeconds) {
   showEvalPanel();
 
-  if(!wasSpeechSupported){
+  if (!wasSpeechSupported) {
     setEvalNote("Speech recognition isn't supported in this browser — try Chrome or Edge to get feedback next time. Your completion was still saved.");
     return;
   }
-  if(wasMicDenied){
+  if (wasMicDenied) {
     setEvalNote("Microphone access was denied, so this attempt couldn't be evaluated. Your completion was still saved.");
     return;
   }
-  if(!transcript || !transcript.trim()){
+  if (!transcript || !transcript.trim()) {
     setEvalNote("No speech was captured for this attempt, so there's nothing to evaluate. Your completion was still saved.");
     return;
   }
@@ -840,7 +859,7 @@ async function evaluateAttempt(topic, transcript, deckId, completionId, wasSpeec
     body: { topic: topic.text, category: topic.category, transcript, elapsedSeconds }
   });
 
-  if(error || !data || !data.scores){
+  if (error || !data || !data.scores) {
     setEvalNote('Could not get feedback for this attempt (evaluation service error). Your completion was still saved.');
     return;
   }
@@ -861,8 +880,8 @@ async function evaluateAttempt(topic, transcript, deckId, completionId, wasSpeec
   });
 }
 
-async function markComplete(){
-  if(!currentTopic || !currentUser) return;
+async function markComplete() {
+  if (!currentTopic || !currentUser) return;
   completeBtn.disabled = true;
 
   // Snapshot everything before state moves on to the next topic
@@ -886,7 +905,7 @@ async function markComplete(){
     .insert(payload)
     .select('id')
     .single();
-  if(error){
+  if (error) {
     statusText.textContent = 'error saving';
     completeBtn.disabled = false;
     return;
@@ -898,7 +917,7 @@ async function markComplete(){
   // Fire off evaluation in the background — don't block moving to the next topic
   evaluateAttempt(topicSnapshot, transcriptSnapshot, deckIdSnapshot, completionRow.id, wasSpeechSupported, wasMicDenied, elapsedSecondsSnapshot);
 
-  if(topics.length === 0){
+  if (topics.length === 0) {
     currentTopic = null;
     handleEmptyDeck("You've completed every topic in this deck. Add more via \"Manage decks\".");
     return;
@@ -909,7 +928,7 @@ async function markComplete(){
 
 completeBtn.addEventListener('click', markComplete);
 
-function showError(message){
+function showError(message) {
   hideTopicSkeleton();
   errorMsg.innerHTML = message;
   errorMsg.classList.add('show');
@@ -917,22 +936,22 @@ function showError(message){
   statusText.textContent = 'error';
 }
 
-async function loadDefaultTopics(){
+async function loadDefaultTopics() {
   showTopicSkeleton();
-  try{
+  try {
     const res = await fetch('topics.json', { cache: 'no-store' });
-    if(!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
-    if(!Array.isArray(data) || data.length === 0) throw new Error('empty topics.json');
+    if (!Array.isArray(data) || data.length === 0) throw new Error('empty topics.json');
     const mapped = data.map(([category, text]) => ({ id: null, category, text, key: 'default:' + text }));
     const completedKeys = await fetchCompletedKeys(null);
     topics = mapped.filter(t => !completedKeys.has(t.key));
-    if(topics.length === 0){
+    if (topics.length === 0) {
       handleEmptyDeck("You've completed every topic in the default deck. Try a custom deck or create more topics.");
       return;
     }
     finishLoadingTopics();
-  }catch(err){
+  } catch (err) {
     showError(
       "Couldn't load <code>topics.json</code>. If you opened this file directly " +
       "(file://), browsers block local fetches — run a tiny local server instead, e.g. " +
@@ -969,14 +988,14 @@ const nextMonthBtn = document.getElementById('nextMonthBtn');
 const calMonthLabel = document.getElementById('calMonthLabel');
 const calGrid = document.getElementById('calGrid');
 const calSummary = document.getElementById('calSummary');
-const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 historyBtn.addEventListener('click', () => {
   historyPanel.classList.toggle('hidden');
   decksPanel.classList.add('hidden');
   completedPanel.classList.add('hidden');
   progressPanel.classList.add('hidden');
-  if(!historyPanel.classList.contains('hidden')){
+  if (!historyPanel.classList.contains('hidden')) {
     const now = new Date();
     calYear = now.getFullYear();
     calMonth = now.getMonth();
@@ -986,16 +1005,16 @@ historyBtn.addEventListener('click', () => {
 closeHistoryBtn.addEventListener('click', () => historyPanel.classList.add('hidden'));
 prevMonthBtn.addEventListener('click', () => {
   calMonth--;
-  if(calMonth < 0){ calMonth = 11; calYear--; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
   renderCalendar();
 });
 nextMonthBtn.addEventListener('click', () => {
   calMonth++;
-  if(calMonth > 11){ calMonth = 0; calYear++; }
+  if (calMonth > 11) { calMonth = 0; calYear++; }
   renderCalendar();
 });
 
-async function renderCalendar(){
+async function renderCalendar() {
   calMonthLabel.textContent = monthNames[calMonth] + ' ' + calYear;
   calGrid.innerHTML = Array.from({ length: 35 }).map(() =>
     '<div class="cal-day skel-day"><span class="skel"></span></div>'
@@ -1011,7 +1030,7 @@ async function renderCalendar(){
     .lt('completed_at', startOfNextMonth.toISOString());
 
   const counts = {};
-  if(!error && data){
+  if (!error && data) {
     data.forEach(row => {
       const d = new Date(row.completed_at);
       const key = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
@@ -1021,7 +1040,7 @@ async function renderCalendar(){
 
   calGrid.innerHTML = '';
   const firstWeekday = (startOfMonth.getDay() + 6) % 7; // Monday = 0
-  for(let i = 0; i < firstWeekday; i++){
+  for (let i = 0; i < firstWeekday; i++) {
     const cell = document.createElement('div');
     cell.className = 'cal-day empty';
     calGrid.appendChild(cell);
@@ -1031,16 +1050,16 @@ async function renderCalendar(){
   const today = new Date();
   let total = 0;
 
-  for(let day = 1; day <= daysInMonth; day++){
+  for (let day = 1; day <= daysInMonth; day++) {
     const key = calYear + '-' + (calMonth + 1) + '-' + day;
     const count = counts[key] || 0;
     total += count;
     const cell = document.createElement('div');
     cell.className = 'cal-day';
-    if(today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === day){
+    if (today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === day) {
       cell.classList.add('today');
     }
-    if(count > 0){
+    if (count > 0) {
       const alpha = Math.min(0.14 + count * 0.16, 0.92);
       cell.style.background = 'rgba(245,244,240,' + alpha + ')';
       cell.style.color = '#0a0a0a';
@@ -1078,16 +1097,16 @@ progressBtn.addEventListener('click', () => {
   decksPanel.classList.add('hidden');
   historyPanel.classList.add('hidden');
   completedPanel.classList.add('hidden');
-  if(!progressPanel.classList.contains('hidden')) loadProgress();
+  if (!progressPanel.classList.contains('hidden')) loadProgress();
 });
 closeProgressBtn.addEventListener('click', () => progressPanel.classList.add('hidden'));
 
-function dateKey(d){
+function dateKey(d) {
   return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
 }
 
-function computeStreaks(dates){
-  if(dates.length === 0) return { current: 0, longest: 0 };
+function computeStreaks(dates) {
+  if (dates.length === 0) return { current: 0, longest: 0 };
   const daySet = new Set(dates.map(dateKey));
   const uniqueDays = Array.from(daySet).map(k => {
     const [y, m, d] = k.split('-').map(Number);
@@ -1095,7 +1114,7 @@ function computeStreaks(dates){
   }).sort((a, b) => a - b);
 
   let longest = 1, run = 1;
-  for(let i = 1; i < uniqueDays.length; i++){
+  for (let i = 1; i < uniqueDays.length; i++) {
     const diffDays = Math.round((uniqueDays[i] - uniqueDays[i - 1]) / 86400000);
     run = diffDays === 1 ? run + 1 : 1;
     longest = Math.max(longest, run);
@@ -1104,16 +1123,16 @@ function computeStreaks(dates){
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const cursor = new Date(today);
-  if(!daySet.has(dateKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  if (!daySet.has(dateKey(cursor))) cursor.setDate(cursor.getDate() - 1);
   let current = 0;
-  while(daySet.has(dateKey(cursor))){
+  while (daySet.has(dateKey(cursor))) {
     current++;
     cursor.setDate(cursor.getDate() - 1);
   }
   return { current, longest };
 }
 
-async function loadProgress(){
+async function loadProgress() {
   chartWrap.innerHTML = '<div class="chart-skel skel"></div>';
   chartLegend.innerHTML = '';
   currentStreakNum.textContent = '—';
@@ -1125,15 +1144,15 @@ async function loadProgress(){
     sb.from('evaluations').select('scores, created_at').order('created_at', { ascending: true })
   ]);
 
-  if(completionsRes.error){
+  if (completionsRes.error) {
     showToast(completionsRes.error.message, true);
-  }else{
+  } else {
     const streaks = computeStreaks((completionsRes.data || []).map(r => new Date(r.completed_at)));
     currentStreakNum.textContent = streaks.current;
     longestStreakNum.textContent = streaks.longest;
   }
 
-  if(evaluationsRes.error){
+  if (evaluationsRes.error) {
     showToast(evaluationsRes.error.message, true);
     chartWrap.innerHTML = '<p class="empty-note">Could not load your progress.</p>';
     return;
@@ -1142,7 +1161,7 @@ async function loadProgress(){
   const rows = (evaluationsRes.data || []).filter(r => r.scores);
   totalSessionsNum.textContent = rows.length;
 
-  if(rows.length === 0){
+  if (rows.length === 0) {
     chartWrap.innerHTML = '<p class="empty-note">Complete a few practice sessions to see your trend line here.</p>';
     return;
   }
@@ -1151,7 +1170,7 @@ async function loadProgress(){
   renderChart(rows);
 }
 
-function renderChartLegend(){
+function renderChartLegend() {
   chartLegend.innerHTML = CHART_METRICS.map(m => {
     const off = chartHiddenMetrics.has(m.key) ? ' off' : '';
     return '<span class="legend-item' + off + '" data-metric="' + m.key + '">' +
@@ -1160,7 +1179,7 @@ function renderChartLegend(){
   chartLegend.querySelectorAll('.legend-item').forEach(el => {
     el.addEventListener('click', () => {
       const key = el.dataset.metric;
-      if(chartHiddenMetrics.has(key)) chartHiddenMetrics.delete(key);
+      if (chartHiddenMetrics.has(key)) chartHiddenMetrics.delete(key);
       else chartHiddenMetrics.add(key);
       renderChartLegend();
       renderChart(lastProgressRows);
@@ -1168,7 +1187,7 @@ function renderChartLegend(){
   });
 }
 
-function renderChart(rows){
+function renderChart(rows) {
   lastProgressRows = rows;
   const W = 640, H = 220, padL = 26, padR = 10, padT = 14, padB = 10;
   const innerW = W - padL - padR, innerH = H - padT - padB;
@@ -1177,7 +1196,7 @@ function renderChart(rows){
   const yFor = v => padT + innerH - (Math.max(0, Math.min(10, v)) / 10) * innerH;
 
   let gridLines = '';
-  for(let g = 0; g <= 10; g += 2){
+  for (let g = 0; g <= 10; g += 2) {
     const y = yFor(g);
     gridLines += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '" stroke="#ffffff14" stroke-width="1"/>';
     gridLines += '<text x="' + (padL - 6) + '" y="' + (y + 3) + '" text-anchor="end" font-size="9" fill="#8a8a85" font-family="IBM Plex Mono, monospace">' + g + '</text>';
@@ -1188,7 +1207,7 @@ function renderChart(rows){
 
   let paths = '';
   CHART_METRICS.forEach(m => {
-    if(chartHiddenMetrics.has(m.key)) return;
+    if (chartHiddenMetrics.has(m.key)) return;
     const pts = rows.map((r, i) => {
       const v = r.scores ? r.scores[m.key] : null;
       return (v === null || v === undefined) ? null : [xFor(i), yFor(v)];
@@ -1196,16 +1215,16 @@ function renderChart(rows){
     let d = '';
     let started = false;
     pts.forEach(p => {
-      if(!p){ started = false; return; }
+      if (!p) { started = false; return; }
       d += (started ? ' L ' : 'M ') + p[0].toFixed(1) + ' ' + p[1].toFixed(1);
       started = true;
     });
-    if(!d) return;
+    if (!d) return;
     paths += '<path d="' + d + '" fill="none" stroke="#f5f4f0" stroke-width="2" ' +
       'stroke-dasharray="' + dashPatterns[m.key] + '" opacity="' + opacities[m.key] + '" ' +
       'stroke-linecap="round" stroke-linejoin="round"/>';
     pts.forEach(p => {
-      if(p) paths += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2.6" fill="#f5f4f0" opacity="' + opacities[m.key] + '"/>';
+      if (p) paths += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2.6" fill="#f5f4f0" opacity="' + opacities[m.key] + '"/>';
     });
   });
 
