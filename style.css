@@ -874,3 +874,239 @@
     height:auto;
     display:block;
   }
+
+  /* ---- Desktop layout ---- */
+  /* Mobile is untouched below this breakpoint — everything above is unchanged. */
+  @media (min-width: 960px){
+
+    #landingStage, #authStage{
+      max-width:920px;
+    }
+
+    #appStage{
+      max-width:1200px;
+      display:grid;
+      grid-template-columns:200px minmax(480px, 1fr) 220px;
+      column-gap:48px;
+      align-items:start;
+      padding:36px 48px;
+    }
+
+    /* Let these flex containers dissolve so their children become
+       independent grid items placed explicitly below, without
+       touching mobile's flex layout (this rule only applies ≥960px). */
+    #appStage > .deck-row,
+    #appStage > .controls,
+    #appStage > .footer-row{
+      display:contents;
+    }
+
+    /* Row 1 — full-width top bar */
+    #appStage > .top-bar{
+      grid-row:1;
+      grid-column:1 / -1;
+      margin-bottom:36px;
+    }
+
+    /* Row 2 */
+    #appStage > .deck-row > #deckSelect{
+      grid-row:2;
+      grid-column:3;
+      width:100%;
+      max-width:none;
+      margin-bottom:16px;
+      border:1px solid #ffffff2a;
+      padding:9px 11px;
+      border-radius:2px;
+    }
+    #appStage > .eyebrow{
+      grid-row:2;
+      grid-column:2;
+      margin-bottom:18px;
+      align-self:end;
+    }
+
+    /* Row 3 — the clock, the card, and the nav buttons line up together */
+    #appStage > .controls > #timerWrap{
+      grid-row:3;
+      grid-column:1;
+      justify-self:center;
+    }
+    #appStage > #card{
+      grid-row:3;
+      grid-column:2;
+      padding:72px 56px 56px;
+      min-height:340px;
+    }
+    #appStage > .deck-row > .deck-row-btns{
+      grid-row:3;
+      grid-column:3;
+      flex-direction:column;
+      align-items:stretch;
+      gap:8px;
+    }
+    #appStage > .deck-row > .deck-row-btns button{
+      text-align:left;
+    }
+
+    /* Row 4 */
+    #appStage > .footer-row > #resetBtn{
+      grid-row:4;
+      grid-column:1;
+      justify-self:center;
+      margin-top:16px;
+    }
+    #appStage > .controls > .btn-row{
+      grid-row:4;
+      grid-column:2;
+      margin-top:26px;
+      flex-wrap:wrap;
+    }
+
+    /* Row 5 */
+    #appStage > .footer-row > label{
+      grid-row:5;
+      grid-column:1;
+      justify-self:center;
+      margin-top:14px;
+    }
+    #appStage > #evalPanel{
+      grid-row:5;
+      grid-column:2;
+      padding:24px 32px 26px;
+    }
+
+    #appStage > #errorMsg{
+      grid-row:6;
+      grid-column:2;
+    }
+
+    /* Linear bar is replaced by the circular clock ring on desktop */
+    #appStage > .bar{ display:none; }
+
+    /* Panels render in the center column on desktop for a cleaner look */
+    #appStage > .decks-panel{
+      grid-row:20;
+      grid-column:2;
+      margin-top:28px;
+      padding:24px 28px 22px;
+      max-height:520px;
+      overflow-y:auto;
+      scrollbar-width:thin;
+      scrollbar-color:#ffffff30 transparent;
+    }
+    #appStage > .decks-panel::-webkit-scrollbar{ width:5px; }
+    #appStage > .decks-panel::-webkit-scrollbar-track{ background:transparent; }
+    #appStage > .decks-panel::-webkit-scrollbar-thumb{ background:#ffffff30; border-radius:3px; }
+
+    /* Cleaner panel headings */
+    #appStage .decks-panel h2{
+      font-size:1.05rem;
+      margin:0 0 14px;
+      padding-bottom:12px;
+      border-bottom:1px solid #ffffff14;
+    }
+
+    /* Tighter list items on desktop */
+    #appStage .deck-list li,
+    #appStage .topic-list li{
+      padding:7px 0;
+      font-size:12.5px;
+    }
+
+    /* Compact calendar on desktop */
+    #appStage .cal-grid{
+      gap:3px;
+      max-width:380px;
+    }
+    #appStage .cal-weekdays{
+      max-width:380px;
+    }
+    #appStage .cal-day{
+      font-size:10px;
+    }
+    #appStage .cal-day .d-count{
+      font-size:12px;
+    }
+
+    /* Smaller streak boxes on desktop */
+    #appStage .streak-box{
+      padding:12px 10px;
+      min-width:90px;
+    }
+    #appStage .streak-num{
+      font-size:1.5rem;
+    }
+
+    /* Chart constrained */
+    #appStage .chart-wrap{
+      max-width:500px;
+    }
+    #appStage .chart-skel{
+      height:180px;
+    }
+
+    /* Circular clock ring, synced live via the --pct custom property
+       app.js sets on every tick */
+    #appStage > .controls > #timerWrap{
+      width:190px;
+      height:190px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      background:
+        radial-gradient(closest-side, #0d0d0d 78%, transparent 79% 100%),
+        conic-gradient(var(--paper) calc(var(--pct, 0) * 1%), #ffffff20 0);
+      transition:background 0.25s linear;
+    }
+    #appStage > .controls > #timerWrap.warn{
+      background:
+        radial-gradient(closest-side, #0d0d0d 78%, transparent 79% 100%),
+        conic-gradient(#e0d9c8 calc(var(--pct, 0) * 1%), #ffffff20 0);
+    }
+    #appStage > .controls > #timerWrap.done{
+      background:
+        radial-gradient(closest-side, #0d0d0d 78%, transparent 79% 100%),
+        conic-gradient(var(--paper) 100%, #ffffff20 0);
+    }
+    #appStage #timerWrap .clock{
+      font-size:34px;
+      min-width:0;
+    }
+
+    /* Let the topic text fill the wider card */
+    #appStage .topic{
+      max-width:none;
+    }
+
+    /* Wider evaluation grid for roomier layout */
+    #appStage .eval-row{
+      grid-template-columns:110px 1fr 48px;
+      gap:16px;
+      margin-bottom:12px;
+      font-size:13px;
+    }
+  }
+
+  /* ---- Extra-large desktop (≥1400px) ---- */
+  @media (min-width: 1400px){
+    #appStage{
+      max-width:1400px;
+      grid-template-columns:220px minmax(560px, 1fr) 240px;
+      column-gap:56px;
+      padding:40px 56px;
+    }
+    #appStage > #card{
+      padding:80px 64px 64px;
+      min-height:380px;
+    }
+    #appStage > .controls > #timerWrap{
+      width:210px;
+      height:210px;
+    }
+    #appStage #timerWrap .clock{
+      font-size:38px;
+    }
+  }

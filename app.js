@@ -707,6 +707,7 @@ function updateClock(){
   clock.textContent = formatTime(remaining);
   const pct = 100 - (remaining / duration) * 100;
   barFill.style.width = pct + '%';
+  timerWrap.style.setProperty('--pct', pct);
   timerWrap.classList.toggle('warn', remaining <= 10 && remaining > 0);
   timerWrap.classList.toggle('done', remaining === 0);
 }
