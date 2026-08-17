@@ -622,6 +622,7 @@ let running = false;
 const cardEl = document.getElementById('card');
 const topicText = document.getElementById('topicText');
 const categoryLabel = document.getElementById('categoryLabel');
+const liveCaption = document.getElementById('liveCaption');
 const deckCount = document.getElementById('deckCount');
 const clock = document.getElementById('clock');
 const barFill = document.getElementById('barFill');
@@ -635,71 +636,162 @@ const statusText = document.getElementById('statusText');
 const timerWrap = document.getElementById('timerWrap');
 const errorMsg = document.getElementById('errorMsg');
 
-/* ---- Speech capture (Web Speech API) ---- */
-const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
-const speechSupported = !!SpeechRecognitionCtor;
-let recognition = null;
-let speechTranscript = '';
+/* ---- Speech capture (MediaRecorder — records audio; transcription happens
+   server-side via Groq in the evaluate-speech edge function) ---- */
+const speechSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
 let micDenied = false;
+let mediaStream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordedMimeType = '';
 
-let restartTimer = null;
-let rapidRestartCount = 0;
-let lastRecognitionStart = 0;
+function pickAudioMimeType() {
+  // iOS Safari (through 18.3) only produces audio/mp4; 18.4+ and Chrome/Firefox
+  // prefer webm/opus. Let the browser tell us what it actually supports rather
+  // than assuming — Groq's API accepts both formats natively.
+  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/wav'];
+  return candidates.find(t => window.MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+}
 
-if (speechSupported) {
-  recognition = new SpeechRecognitionCtor();
-  recognition.continuous = true;
-  recognition.interimResults = false;
-  recognition.lang = 'en-US';
+function releaseMediaStream() {
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
+}
 
-  recognition.onresult = (e) => {
+async function beginSpeechCapture() {
+  if (!speechSupported) return;
+  recordedChunks = [];
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    micDenied = true;
+    showToast('Microphone access was blocked, so this attempt won\u2019t be scored.', true);
+    return;
+  }
+  recordedMimeType = pickAudioMimeType();
+  // 32kbps is plenty for voice and keeps the upload small — browsers otherwise
+  // default to a much higher (music-quality) bitrate.
+  const recorderOptions = { audioBitsPerSecond: 32000 };
+  if (recordedMimeType) recorderOptions.mimeType = recordedMimeType;
+  try {
+    mediaRecorder = new MediaRecorder(mediaStream, recorderOptions);
+  } catch (err) {
+    micDenied = true;
+    showToast('Could not start recording on this device.', true);
+    releaseMediaStream();
+    return;
+  }
+  mediaRecorder.ondataavailable = (e) => {
+    if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+  };
+  // 1s timeslices so ondataavailable fires periodically instead of only at stop —
+  // guards against losing everything if something crashes mid-recording.
+  mediaRecorder.start(1000);
+}
+
+function pauseSpeechCapture() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    try { mediaRecorder.pause(); } catch (e) { /* ignore */ }
+  }
+}
+
+function resumeOrBeginSpeechCapture() {
+  if (mediaRecorder && mediaRecorder.state === 'paused') {
+    try { mediaRecorder.resume(); return; } catch (e) { /* fall through to a fresh start */ }
+  }
+  beginSpeechCapture();
+}
+
+// Fully stops recording, releases the microphone, and resolves with the
+// captured audio as a single Blob (or null if nothing was captured).
+function finalizeSpeechCapture() {
+  if (!speechSupported || !mediaRecorder || mediaRecorder.state === 'inactive') {
+    releaseMediaStream();
+    return Promise.resolve(null);
+  }
+  return new Promise((resolve) => {
+    mediaRecorder.onstop = () => {
+      releaseMediaStream();
+      const blob = recordedChunks.length
+        ? new Blob(recordedChunks, { type: recordedMimeType || 'audio/webm' })
+        : null;
+      recordedChunks = [];
+      resolve(blob);
+    };
+    try { mediaRecorder.stop(); } catch (e) { releaseMediaStream(); resolve(null); }
+  });
+}
+
+/* ---- Live captions (cosmetic only — never used for scoring) ----
+   This is a completely separate, best-effort SpeechRecognition instance
+   running purely so there's something to look at on screen while you talk.
+   The actual transcript used for evaluation comes from Groq transcribing
+   the MediaRecorder audio above, so nothing here needs to be reliable —
+   if it stutters, restarts, or isn't supported at all (Firefox, some older
+   browsers), it just fails quietly and the card stays as it was. */
+const CaptionRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+const captionsSupported = !!CaptionRecognitionCtor;
+let captionRecognition = null;
+let captionFinalText = '';
+let captionsActive = false;
+let captionRestartTimer = null;
+
+if (captionsSupported) {
+  captionRecognition = new CaptionRecognitionCtor();
+  captionRecognition.continuous = true;
+  captionRecognition.interimResults = true;
+  captionRecognition.lang = 'en-US';
+
+  captionRecognition.onresult = (e) => {
+    let interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
+      const chunk = e.results[i][0].transcript;
       if (e.results[i].isFinal) {
-        const chunk = e.results[i][0].transcript.trim();
-        if (chunk) speechTranscript += (speechTranscript ? ' ' : '') + chunk;
+        captionFinalText += (captionFinalText ? ' ' : '') + chunk.trim();
+      } else {
+        interim += chunk;
       }
     }
+    renderCaption(interim);
   };
 
-  recognition.onerror = (e) => {
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-      micDenied = true;
-    }
-    // other errors (e.g. 'no-speech') are transient — onend below decides whether to restart
-  };
+  captionRecognition.onerror = () => { /* silent — cosmetic only, no need to surface this */ };
 
-  recognition.onend = () => {
-    // Chrome on desktop periodically ends recognition on its own (silence, ~60s caps) —
-    // restarting right away is invisible there. On iOS (Chrome/Safari, both WebKit),
-    // sessions end every few seconds, so restarting instantly causes the mic
-    // permission indicator to flicker on/off. A short delay smooths that out, and a
-    // backoff stops us from looping forever if restarts keep failing immediately.
-    if (!running || micDenied) return;
-
-    const now = Date.now();
-    rapidRestartCount = (now - lastRecognitionStart < 1500) ? rapidRestartCount + 1 : 0;
-    if (rapidRestartCount > 6) return; // give up silently; keep whatever transcript we have
-
-    clearTimeout(restartTimer);
-    restartTimer = setTimeout(() => {
-      if (!running || micDenied) return;
-      lastRecognitionStart = Date.now();
-      try { recognition.start(); } catch (e) { /* already running, ignore */ }
+  captionRecognition.onend = () => {
+    if (!captionsActive) return;
+    clearTimeout(captionRestartTimer);
+    captionRestartTimer = setTimeout(() => {
+      if (!captionsActive) return;
+      try { captionRecognition.start(); } catch (e) { /* already running, ignore */ }
     }, 300);
   };
 }
 
-function beginSpeechCapture() {
-  if (!speechSupported) return;
-  rapidRestartCount = 0;
-  lastRecognitionStart = Date.now();
-  try { recognition.start(); } catch (e) { /* already started, ignore */ }
+function renderCaption(interim) {
+  const interimHtml = interim ? '<span class="interim">' + escapeHtml(interim) + '</span>' : '';
+  const sep = (captionFinalText && interim) ? ' ' : '';
+  liveCaption.innerHTML = escapeHtml(captionFinalText) + sep + interimHtml;
+  liveCaption.classList.toggle('hidden', !captionFinalText && !interim);
 }
 
-function stopSpeechCapture() {
-  if (!speechSupported) return;
-  clearTimeout(restartTimer);
-  try { recognition.stop(); } catch (e) { /* ignore */ }
+function startCaptions() {
+  if (!captionsSupported) return;
+  captionsActive = true;
+  try { captionRecognition.start(); } catch (e) { /* already running, ignore */ }
+}
+
+function pauseCaptions() {
+  captionsActive = false;
+  clearTimeout(captionRestartTimer);
+  if (captionRecognition) { try { captionRecognition.stop(); } catch (e) { /* ignore */ } }
+}
+
+function resetCaptions() {
+  captionFinalText = '';
+  liveCaption.innerHTML = '';
+  liveCaption.classList.add('hidden');
 }
 
 function shuffle(arr) {
@@ -744,20 +836,24 @@ function drawTopic() {
   void cardEl.offsetWidth;
   cardEl.classList.add('animate');
   stopTimer();
+  finalizeSpeechCapture(); // discard any in-progress recording — this is a new topic
+  resetCaptions();
   remaining = duration;
   updateClock();
   completeBtn.disabled = false;
-  speechTranscript = '';
   micDenied = false;
 }
 
 function stopTimer() {
+  // Pauses (doesn't release the mic) — pressing Start again resumes the same
+  // recording. drawTopic()/markComplete() are the ones that fully finalize it.
   running = false;
   clearInterval(timerId);
   startBtn.textContent = 'Start';
   statusDot.classList.remove('live');
   statusText.textContent = 'ready';
-  stopSpeechCapture();
+  pauseSpeechCapture();
+  pauseCaptions();
 }
 
 function tick() {
@@ -780,7 +876,8 @@ function startTimer() {
   statusDot.classList.add('live');
   statusText.textContent = 'speaking';
   timerId = setInterval(tick, 1000);
-  beginSpeechCapture();
+  startCaptions();
+  resumeOrBeginSpeechCapture();
 }
 
 function enableControls() {
@@ -837,26 +934,53 @@ function renderEvalResult(scores, feedback, example) {
   evalBody.innerHTML = rows + '<p class="eval-feedback">' + escapeHtml(feedback || '') + '</p>' + exampleHtml;
 }
 
-async function evaluateAttempt(topic, transcript, deckId, completionId, wasSpeechSupported, wasMicDenied, elapsedSeconds) {
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      // reader.result looks like "data:audio/webm;base64,AAAA..." — strip the prefix
+      const commaIdx = reader.result.indexOf(',');
+      resolve(reader.result.slice(commaIdx + 1));
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function evaluateAttempt(topic, audioBlob, deckId, completionId, wasSpeechSupported, wasMicDenied, elapsedSeconds) {
   showEvalPanel();
 
   if (!wasSpeechSupported) {
-    setEvalNote("Speech recognition isn't supported in this browser — try Chrome or Edge to get feedback next time. Your completion was still saved.");
+    setEvalNote("Audio recording isn't supported in this browser — try a recent version of Chrome, Safari, or Edge to get feedback next time. Your completion was still saved.");
     return;
   }
   if (wasMicDenied) {
     setEvalNote("Microphone access was denied, so this attempt couldn't be evaluated. Your completion was still saved.");
     return;
   }
-  if (!transcript || !transcript.trim()) {
-    setEvalNote("No speech was captured for this attempt, so there's nothing to evaluate. Your completion was still saved.");
+  if (!audioBlob || audioBlob.size === 0) {
+    setEvalNote("No audio was captured for this attempt, so there's nothing to evaluate. Your completion was still saved.");
     return;
   }
 
   setEvalLoading();
 
+  let audioBase64;
+  try {
+    audioBase64 = await blobToBase64(audioBlob);
+  } catch (err) {
+    setEvalNote('Could not process your recording for evaluation. Your completion was still saved.');
+    return;
+  }
+
   const { data, error } = await sb.functions.invoke('evaluate-speech', {
-    body: { topic: topic.text, category: topic.category, transcript, elapsedSeconds }
+    body: {
+      audioBase64,
+      mimeType: audioBlob.type || 'audio/webm',
+      topic: topic.text,
+      category: topic.category,
+      elapsedSeconds
+    }
   });
 
   if (error || !data || !data.scores) {
@@ -873,7 +997,7 @@ async function evaluateAttempt(topic, transcript, deckId, completionId, wasSpeec
     topic_key: topic.key,
     category: topic.category,
     topic_text: topic.text,
-    transcript,
+    transcript: data.transcript || '',
     scores: data.scores,
     feedback: data.feedback || '',
     example: data.example || ''
@@ -886,11 +1010,13 @@ async function markComplete() {
 
   // Snapshot everything before state moves on to the next topic
   const topicSnapshot = { ...currentTopic };
-  const transcriptSnapshot = speechTranscript;
   const deckIdSnapshot = selectedDeckId === 'default' ? null : selectedDeckId;
   const wasSpeechSupported = speechSupported;
   const wasMicDenied = micDenied;
   const elapsedSecondsSnapshot = Math.max(0, duration - remaining);
+
+  stopTimer();
+  const audioBlob = await finalizeSpeechCapture();
 
   const payload = {
     user_id: currentUser.id,
@@ -912,10 +1038,9 @@ async function markComplete() {
   }
   const doneKey = topicSnapshot.key;
   topics = topics.filter(t => t.key !== doneKey);
-  stopTimer();
 
   // Fire off evaluation in the background — don't block moving to the next topic
-  evaluateAttempt(topicSnapshot, transcriptSnapshot, deckIdSnapshot, completionRow.id, wasSpeechSupported, wasMicDenied, elapsedSecondsSnapshot);
+  evaluateAttempt(topicSnapshot, audioBlob, deckIdSnapshot, completionRow.id, wasSpeechSupported, wasMicDenied, elapsedSecondsSnapshot);
 
   if (topics.length === 0) {
     currentTopic = null;
