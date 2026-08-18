@@ -824,7 +824,11 @@ function updateClock() {
 }
 
 function drawTopic() {
-  if (topics.length === 0) return;
+  if (topics.length === 0) {
+    handleEmptyDeck("You've completed every topic in this deck. Add more via \"Manage decks\".");
+    resetCaptions();
+    return;
+  }
   if (deckIndex >= deck.length) newDeck();
   const t = deck[deckIndex];
   deckIndex++;
@@ -1042,13 +1046,18 @@ async function markComplete() {
   // Fire off evaluation in the background — don't block moving to the next topic
   evaluateAttempt(topicSnapshot, audioBlob, deckIdSnapshot, completionRow.id, wasSpeechSupported, wasMicDenied, elapsedSecondsSnapshot);
 
+  // Keep the current card + transcription on screen so the user can review.
+  // They must press "Draw topic" to move on to the next card.
+  statusText.textContent = 'completed';
+  startBtn.disabled = true;
+  completeBtn.disabled = true;
+
   if (topics.length === 0) {
-    currentTopic = null;
-    handleEmptyDeck("You've completed every topic in this deck. Add more via \"Manage decks\".");
-    return;
+    // No more topics — the next Draw will show the empty-deck message
+    newDeck();
+  } else {
+    newDeck();
   }
-  newDeck();
-  drawTopic();
 }
 
 completeBtn.addEventListener('click', markComplete);
