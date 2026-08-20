@@ -274,7 +274,6 @@ const deckTopicList = document.getElementById('deckTopicList');
 const newTopicText = document.getElementById('newTopicText');
 const newTopicCategory = document.getElementById('newTopicCategory');
 const addTopicBtn = document.getElementById('addTopicBtn');
-const closeDecksBtn = document.getElementById('closeDecksBtn');
 
 function setPanelMsg(text, isErr) {
   showToast(text, isErr);
@@ -436,14 +435,29 @@ async function deleteTopic(topicId) {
   if (selectedDeckId === panelSelectedDeckId) loadActiveDeckTopics();
 }
 
+const practiceNavBtn = document.getElementById('practiceNavBtn');
+if (practiceNavBtn) {
+  practiceNavBtn.addEventListener('click', () => {
+    decksPanel.classList.add('hidden');
+    if (typeof historyPanel !== 'undefined') historyPanel.classList.add('hidden');
+    if (typeof completedPanel !== 'undefined') completedPanel.classList.add('hidden');
+    if (typeof progressPanel !== 'undefined') progressPanel.classList.add('hidden');
+    document.getElementById('practiceSection').classList.remove('hidden');
+    document.querySelectorAll('.main-nav .nav-link').forEach(n => n.classList.remove('active'));
+    practiceNavBtn.classList.add('active');
+  });
+}
+
 manageDecksBtn.addEventListener('click', () => {
-  decksPanel.classList.toggle('hidden');
-  historyPanel.classList.add('hidden');
-  completedPanel.classList.add('hidden');
-  progressPanel.classList.add('hidden');
-  if (!decksPanel.classList.contains('hidden')) loadUserDecks();
+  decksPanel.classList.remove('hidden');
+  if (typeof historyPanel !== 'undefined') historyPanel.classList.add('hidden');
+  if (typeof completedPanel !== 'undefined') completedPanel.classList.add('hidden');
+  if (typeof progressPanel !== 'undefined') progressPanel.classList.add('hidden');
+  document.getElementById('practiceSection').classList.add('hidden');
+  document.querySelectorAll('.main-nav .nav-link').forEach(n => n.classList.remove('active'));
+  manageDecksBtn.classList.add('active');
+  loadUserDecks();
 });
-closeDecksBtn.addEventListener('click', () => decksPanel.classList.add('hidden'));
 createDeckBtn.addEventListener('click', createDeck);
 addTopicBtn.addEventListener('click', addTopicToDeck);
 
@@ -458,16 +472,17 @@ const completedBtn = document.getElementById('completedBtn');
 const completedPanel = document.getElementById('completedPanel');
 const completedDeckName = document.getElementById('completedDeckName');
 const completedList = document.getElementById('completedList');
-const closeCompletedBtn = document.getElementById('closeCompletedBtn');
 
 completedBtn.addEventListener('click', () => {
-  completedPanel.classList.toggle('hidden');
+  completedPanel.classList.remove('hidden');
   decksPanel.classList.add('hidden');
-  historyPanel.classList.add('hidden');
-  progressPanel.classList.add('hidden');
-  if (!completedPanel.classList.contains('hidden')) renderCompletedList();
+  if (typeof historyPanel !== 'undefined') historyPanel.classList.add('hidden');
+  if (typeof progressPanel !== 'undefined') progressPanel.classList.add('hidden');
+  document.getElementById('practiceSection').classList.add('hidden');
+  document.querySelectorAll('.main-nav .nav-link').forEach(n => n.classList.remove('active'));
+  completedBtn.classList.add('active');
+  renderCompletedList();
 });
-closeCompletedBtn.addEventListener('click', () => completedPanel.classList.add('hidden'));
 
 function setCompletedMsg(text, isErr) {
   showToast(text, isErr);
@@ -818,7 +833,6 @@ function updateClock() {
   clock.textContent = formatTime(remaining);
   const pct = 100 - (remaining / duration) * 100;
   barFill.style.width = pct + '%';
-  timerWrap.style.setProperty('--pct', pct);
   timerWrap.classList.toggle('warn', remaining <= 10 && remaining > 0);
   timerWrap.classList.toggle('done', remaining === 0);
 }
@@ -1116,7 +1130,6 @@ durationSelect.addEventListener('change', (e) => {
 let calYear, calMonth;
 const historyBtn = document.getElementById('historyBtn');
 const historyPanel = document.getElementById('historyPanel');
-const closeHistoryBtn = document.getElementById('closeHistoryBtn');
 const prevMonthBtn = document.getElementById('prevMonthBtn');
 const nextMonthBtn = document.getElementById('nextMonthBtn');
 const calMonthLabel = document.getElementById('calMonthLabel');
@@ -1125,18 +1138,18 @@ const calSummary = document.getElementById('calSummary');
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 historyBtn.addEventListener('click', () => {
-  historyPanel.classList.toggle('hidden');
+  historyPanel.classList.remove('hidden');
   decksPanel.classList.add('hidden');
   completedPanel.classList.add('hidden');
-  progressPanel.classList.add('hidden');
-  if (!historyPanel.classList.contains('hidden')) {
-    const now = new Date();
-    calYear = now.getFullYear();
-    calMonth = now.getMonth();
-    renderCalendar();
-  }
+  if (typeof progressPanel !== 'undefined') progressPanel.classList.add('hidden');
+  document.getElementById('practiceSection').classList.add('hidden');
+  document.querySelectorAll('.main-nav .nav-link').forEach(n => n.classList.remove('active'));
+  historyBtn.classList.add('active');
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  renderCalendar();
 });
-closeHistoryBtn.addEventListener('click', () => historyPanel.classList.add('hidden'));
 prevMonthBtn.addEventListener('click', () => {
   calMonth--;
   if (calMonth < 0) { calMonth = 11; calYear--; }
@@ -1210,7 +1223,6 @@ async function renderCalendar() {
 /* ---- Progress panel: streaks + score trend chart ---- */
 const progressBtn = document.getElementById('progressBtn');
 const progressPanel = document.getElementById('progressPanel');
-const closeProgressBtn = document.getElementById('closeProgressBtn');
 const currentStreakNum = document.getElementById('currentStreakNum');
 const longestStreakNum = document.getElementById('longestStreakNum');
 const totalSessionsNum = document.getElementById('totalSessionsNum');
@@ -1227,13 +1239,15 @@ const chartHiddenMetrics = new Set();
 let lastProgressRows = [];
 
 progressBtn.addEventListener('click', () => {
-  progressPanel.classList.toggle('hidden');
+  progressPanel.classList.remove('hidden');
   decksPanel.classList.add('hidden');
   historyPanel.classList.add('hidden');
   completedPanel.classList.add('hidden');
-  if (!progressPanel.classList.contains('hidden')) loadProgress();
+  document.getElementById('practiceSection').classList.add('hidden');
+  document.querySelectorAll('.main-nav .nav-link').forEach(n => n.classList.remove('active'));
+  progressBtn.classList.add('active');
+  loadProgress();
 });
-closeProgressBtn.addEventListener('click', () => progressPanel.classList.add('hidden'));
 
 function dateKey(d) {
   return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();

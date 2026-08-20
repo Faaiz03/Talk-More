@@ -57,8 +57,25 @@ body {
 /* Base Stage */
 .stage {
   width: 100%;
-  max-width: 740px;
+  max-width: 800px;
   padding: 40px 24px;
+}
+
+/* Top Progress Bar */
+.top-bar-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: transparent;
+  margin: 0;
+  border-radius: 0;
+  z-index: 100;
+}
+
+.top-bar-progress .bar-fill {
+  background: var(--paper);
 }
 
 .hidden {
@@ -94,50 +111,37 @@ body {
 }
 
 /* Cards (Main prompt card & Demo card) */
-.card {
+.prompt-container {
   position: relative;
-  background: var(--surface-solid);
-  border: 1px solid var(--line-light);
-  border-radius: var(--radius-lg);
-  padding: 68px 44px 54px;
-  min-height: 320px;
   width: 100%;
+  padding: 80px 0;
+  min-height: 380px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  text-align: center;
-  box-shadow: var(--shadow-md);
-  transition: border-color 0.2s ease;
-}
-
-.card:hover {
-  border-color: var(--line-glow);
+  text-align: left;
 }
 
 .card-label {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--accent-amber);
-  background: #231d10;
-  border: 1px solid #4a3b16;
-  padding: 4px 12px;
-  border-radius: var(--radius-full);
+  color: var(--gray);
   margin-bottom: 24px;
   display: inline-block;
 }
 
 .topic {
   font-family: 'Fraunces', Georgia, serif;
-  font-weight: 500;
-  font-size: clamp(2rem, 6.5vw, 3.2rem);
-  line-height: 1.18;
+  font-weight: 400;
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  line-height: 1.1;
   color: var(--paper);
-  max-width: 540px;
-  letter-spacing: -0.015em;
+  max-width: 100%;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
@@ -168,7 +172,7 @@ body {
 @keyframes cardIn {
   0% {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(12px);
   }
   100% {
     opacity: 1;
@@ -176,17 +180,19 @@ body {
   }
 }
 
-.card.animate {
-  animation: cardIn 0.25s ease-out;
+.prompt-container.animate {
+  animation: cardIn 0.4s ease-out;
 }
 
 /* Controls & Buttons */
 .controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 28px;
-  gap: 16px;
+  justify-content: flex-start;
+  margin-top: 40px;
+  padding-top: 40px;
+  border-top: 1px solid var(--line);
+  gap: 24px;
   flex-wrap: wrap;
 }
 
@@ -198,23 +204,14 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
 }
 
 .timer .clock {
-  font-size: 22px;
-  font-weight: 600;
-  min-width: 68px;
+  font-size: 40px;
+  font-weight: 400;
+  min-width: 115px;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
-}
-
-.timer.warn {
-  border-color: #594416;
-  background: #211a0c;
+  letter-spacing: -0.04em;
 }
 
 .timer.warn .clock {
@@ -226,13 +223,7 @@ body {
 }
 
 .bar {
-  width: 100%;
-  height: 3px;
-  background: var(--line);
-  border-radius: var(--radius-full);
-  margin-top: 20px;
-  position: relative;
-  overflow: hidden;
+  display: none;
 }
 
 .bar-fill {
@@ -247,27 +238,29 @@ body {
 }
 
 button {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-weight: 600;
-  background: var(--surface);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  background: transparent;
   color: var(--paper);
-  border: 1px solid var(--line-light);
-  padding: 11px 20px;
+  border: 1px solid var(--line);
+  padding: 10px 18px;
   font-size: 13px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: border-color 0.15s ease, color 0.15s ease;
   user-select: none;
+  text-transform: uppercase;
 }
 
 button:hover {
-  background: var(--surface-hover);
-  border-color: var(--line-glow);
+  background: transparent;
+  border-color: var(--paper-dim);
+  color: #fff;
 }
 
 button:active {
@@ -275,7 +268,7 @@ button:active {
 }
 
 button:focus-visible {
-  outline: 2px solid var(--paper);
+  outline: 1px solid var(--paper);
   outline-offset: 2px;
 }
 
@@ -283,6 +276,7 @@ button:disabled {
   opacity: 0.35;
   cursor: not-allowed;
   transform: none !important;
+  border-color: var(--line);
 }
 
 button.primary {
@@ -292,8 +286,9 @@ button.primary {
 }
 
 button.primary:hover {
-  background: #ffffff;
-  border-color: #ffffff;
+  background: #fff;
+  border-color: #fff;
+  color: var(--ink);
 }
 
 button.btn-sm {
@@ -500,13 +495,43 @@ option {
   font-weight: 500;
 }
 
+/* Main Navigation (replaces deck-row top section) */
 .deck-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  gap: 12px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
   flex-wrap: wrap;
+  gap: 16px;
+}
+
+.main-nav {
+  display: flex;
+  gap: 24px;
+}
+
+.nav-link {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  padding-bottom: 4px;
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.nav-link:hover {
+  color: var(--paper);
+}
+
+.nav-link.active {
+  color: var(--paper);
+  border-bottom-color: var(--paper);
 }
 
 .deck-row select#deckSelect {
@@ -526,12 +551,11 @@ option {
 
 /* Panels (Decks, History, Progress, Completed) */
 .decks-panel {
-  border: 1px solid var(--line-light);
-  background: var(--surface-solid);
-  border-radius: var(--radius-md);
-  padding: 30px 28px 24px;
+  background: transparent;
+  border: none;
+  padding: 0;
   margin-bottom: 28px;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .decks-panel h2 {
@@ -560,13 +584,13 @@ option {
 .inline-form input {
   flex: 1;
   min-width: 130px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  background: #0d0d10;
-  border: 1px solid var(--line-light);
+  font-family: 'IBM Plex Mono', monospace;
+  background: transparent;
+  border: 1px solid var(--line);
   color: var(--paper);
   padding: 10px 14px;
   font-size: 13.5px;
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   transition: border-color 0.15s ease;
 }
 
@@ -685,16 +709,16 @@ option {
   align-items: center;
   justify-content: center;
   font-size: 11.5px;
-  border-radius: var(--radius-xs);
-  background: #141419;
-  border: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  border: 1px solid transparent;
   color: var(--gray);
   position: relative;
-  transition: background-color 0.15s ease;
+  transition: border-color 0.15s ease;
 }
 
 .cal-day:not(.empty):hover {
-  border-color: var(--line-light);
+  border-color: var(--line);
 }
 
 .cal-day.empty {
@@ -729,12 +753,10 @@ option {
 
 /* AI Evaluation Panel */
 .eval-panel {
-  border: 1px solid var(--line-light);
-  background: var(--surface-solid);
-  border-radius: var(--radius-md);
-  padding: 24px 28px 24px;
-  margin-top: 24px;
-  box-shadow: var(--shadow-md);
+  background: transparent;
+  border-top: 1px solid var(--line);
+  padding: 40px 0 24px;
+  margin-top: 40px;
 }
 
 .eval-head {
@@ -743,12 +765,12 @@ option {
   align-items: center;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11.5px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--accent-amber);
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line);
+  color: var(--paper);
+  margin-bottom: 32px;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .eval-head .link {
@@ -798,20 +820,19 @@ option {
 }
 
 .eval-feedback {
-  margin: 20px 0 0;
+  margin: 32px 0 0;
   font-size: 14px;
   line-height: 1.7;
   color: #e4e4e7;
-  padding-top: 16px;
+  padding-top: 24px;
   border-top: 1px solid var(--line);
 }
 
 .eval-example {
-  margin: 18px 0 0;
-  padding: 16px 20px;
-  border-left: 3px solid var(--accent-amber);
-  background: #1c180e;
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin: 24px 0 0;
+  padding: 0;
+  border-left: none;
+  background: transparent;
 }
 
 .eval-example-label {
@@ -1267,141 +1288,6 @@ li.skel-item {
   }
 
   #appStage {
-    max-width: 1180px;
-    display: grid;
-    grid-template-columns: 210px minmax(500px, 1fr) 220px;
-    column-gap: 44px;
-    align-items: start;
-  }
-
-  #appStage > .deck-row,
-  #appStage > .controls,
-  #appStage > .footer-row {
-    display: contents;
-  }
-
-  /* Row 1 — full-width top bar */
-  #appStage > .top-bar {
-    grid-row: 1;
-    grid-column: 1 / -1;
-    margin-bottom: 40px;
-  }
-
-  /* Row 2 */
-  #appStage > .deck-row > #deckSelect {
-    grid-row: 2;
-    grid-column: 3;
-    width: 100%;
-    max-width: none;
-    margin-bottom: 16px;
-  }
-
-  #appStage > .eyebrow {
-    grid-row: 2;
-    grid-column: 2;
-    margin-bottom: 20px;
-    align-self: end;
-  }
-
-  /* Row 3 — the circular clock, the card, and the deck actions */
-  #appStage > .controls > #timerWrap {
-    grid-row: 3;
-    grid-column: 1;
-    justify-self: center;
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    background:
-      radial-gradient(closest-side, #121216 78%, transparent 79% 100%),
-      conic-gradient(var(--paper) calc(var(--pct, 0) * 1%), #22222a 0);
-    box-shadow: var(--shadow-sm);
-    transition: background 0.25s linear;
-    border: none;
-    padding: 0;
-  }
-
-  #appStage > .controls > #timerWrap.warn {
-    background:
-      radial-gradient(closest-side, #121216 78%, transparent 79% 100%),
-      conic-gradient(var(--accent-amber) calc(var(--pct, 0) * 1%), #22222a 0);
-  }
-
-  #appStage > .controls > #timerWrap.done {
-    background:
-      radial-gradient(closest-side, #121216 78%, transparent 79% 100%),
-      conic-gradient(var(--accent-emerald) 100%, #22222a 0);
-  }
-
-  #appStage #timerWrap .clock {
-    font-size: 32px;
-    min-width: 0;
-  }
-
-  #appStage > #card {
-    grid-row: 3;
-    grid-column: 2;
-    padding: 96px 54px 78px;
-    min-height: 460px;
-  }
-
-  #appStage > .deck-row > .deck-row-btns {
-    grid-row: 3;
-    grid-column: 3;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-
-  #appStage > .deck-row > .deck-row-btns button {
-    text-align: left;
-    padding: 10px 14px;
-  }
-
-  /* Row 4 */
-  #appStage > .footer-row > #resetBtn {
-    grid-row: 4;
-    grid-column: 1;
-    justify-self: center;
-    margin-top: 18px;
-  }
-
-  #appStage > .controls > .btn-row {
-    grid-row: 4;
-    grid-column: 2;
-    margin-top: 28px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  /* Row 5 */
-  #appStage > .footer-row > label {
-    grid-row: 5;
-    grid-column: 1;
-    justify-self: center;
-    margin-top: 14px;
-  }
-
-  #appStage > #evalPanel {
-    grid-row: 5;
-    grid-column: 2;
-  }
-
-  #appStage > #errorMsg {
-    grid-row: 6;
-    grid-column: 2;
-  }
-
-  #appStage > .bar {
-    display: none;
-  }
-
-  #appStage > .decks-panel {
-    grid-row: 20;
-    grid-column: 1 / -1;
-    margin-top: 36px;
+    max-width: 800px;
   }
 }

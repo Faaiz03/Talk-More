@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
@@ -55,7 +55,7 @@
 
   <div class="landing-demo" id="landingDemo">
     <div class="demo-label">Try it — no sign-up needed</div>
-    <div class="card animate" id="demoCard">
+    <div class="prompt-container animate" id="demoCard">
       <div class="card-label" id="demoCategoryLabel">topic</div>
       <div class="topic" id="demoTopicText">Loading a topic…</div>
     </div>
@@ -113,12 +113,13 @@
     <select id="deckSelect">
       <option value="default">Default deck</option>
     </select>
-    <span class="btn-row deck-row-btns">
-      <button class="btn-sm" id="manageDecksBtn">Manage decks</button>
-      <button class="btn-sm" id="completedBtn">Completed</button>
-      <button class="btn-sm" id="historyBtn">History</button>
-      <button class="btn-sm" id="progressBtn">Progress</button>
-    </span>
+    <nav class="main-nav">
+      <span class="nav-link active" id="practiceNavBtn">Practice</span>
+      <span class="nav-link" id="manageDecksBtn">Decks</span>
+      <span class="nav-link" id="completedBtn">Completed</span>
+      <span class="nav-link" id="historyBtn">History</span>
+      <span class="nav-link" id="progressBtn">Analytics</span>
+    </nav>
   </div>
 
   <div class="decks-panel hidden" id="decksPanel">
@@ -141,7 +142,6 @@
       </div>
     </div>
 
-    <div style="margin-top:16px;"><span class="link" id="closeDecksBtn">Close</span></div>
   </div>
 
   <div class="decks-panel hidden" id="historyPanel">
@@ -156,7 +156,6 @@
     </div>
     <div class="cal-grid" id="calGrid"></div>
     <div class="cal-summary" id="calSummary"></div>
-    <div style="margin-top:16px;"><span class="link" id="closeHistoryBtn">Close</span></div>
   </div>
 
   <div class="decks-panel hidden" id="progressPanel">
@@ -183,58 +182,58 @@
       <div class="chart-skel skel"></div>
     </div>
 
-    <div style="margin-top:16px;"><span class="link" id="closeProgressBtn">Close</span></div>
   </div>
 
   <div class="decks-panel hidden" id="completedPanel">
     <h2>Completed — <span id="completedDeckName">Default deck</span></h2>
     <ul class="topic-list" id="completedList"></ul>
-    <div style="margin-top:16px;"><span class="link" id="closeCompletedBtn">Close</span></div>
   </div>
 
-  <div class="eyebrow">
-    <span><span class="dot" id="statusDot"></span><span id="statusText">loading</span></span>
-    <span id="deckCount">—</span>
-  </div>
-
-  <div class="card animate" id="card">
-    <div class="card-label" id="categoryLabel">topic</div>
-    <div class="topic" id="topicText">Fetching topics…</div>
-    <div class="live-caption hidden" id="liveCaption"></div>
-  </div>
-
-  <div class="controls">
-    <div class="timer" id="timerWrap">
-      <span class="clock" id="clock">03:00</span>
+  <div id="practiceSection">
+    <div class="eyebrow">
+      <span><span class="dot" id="statusDot"></span><span id="statusText">loading</span></span>
+      <span id="deckCount">—</span>
     </div>
-    <div class="btn-row">
-      <button id="startBtn" disabled>Start</button>
-      <button id="completeBtn" disabled>Mark complete</button>
-      <button id="drawBtn" class="primary" disabled>Draw topic</button>
+
+    <div class="prompt-container animate" id="card">
+      <div class="card-label" id="categoryLabel">topic</div>
+      <div class="topic" id="topicText">Fetching topics…</div>
+      <div class="live-caption hidden" id="liveCaption"></div>
     </div>
-  </div>
 
-  <div class="bar"><div class="bar-fill" id="barFill"></div></div>
-
-  <div class="eval-panel hidden" id="evalPanel">
-    <div class="eval-head">
-      <span>Evaluation</span>
-      <span class="link" id="closeEvalBtn">Close</span>
+    <div class="controls">
+      <div class="timer" id="timerWrap">
+        <span class="clock" id="clock">03:00</span>
+      </div>
+      <div class="btn-row">
+        <button id="startBtn" disabled>Start</button>
+        <button id="completeBtn" disabled>Mark complete</button>
+        <button id="drawBtn" class="primary" disabled>Draw topic</button>
+      </div>
     </div>
-    <div id="evalBody"></div>
-  </div>
 
-  <div class="footer-row">
-    <span class="link" id="resetBtn">Reset timer</span>
-    <label>
-      Duration
-      <select id="durationSelect">
-        <option value="180" selected>3 min</option>
-        <option value="300">5 min</option>
-        <option value="420">7 min</option>
-        <option value="600">10 min</option>
-      </select>
-    </label>
+    <div class="bar top-bar-progress"><div class="bar-fill" id="barFill"></div></div>
+
+    <div class="eval-panel hidden" id="evalPanel">
+      <div class="eval-head">
+        <span>Evaluation</span>
+        <span class="link" id="closeEvalBtn">Close</span>
+      </div>
+      <div id="evalBody"></div>
+    </div>
+
+    <div class="footer-row">
+      <span class="link" id="resetBtn">Reset timer</span>
+      <label>
+        Duration
+        <select id="durationSelect">
+          <option value="180" selected>3 min</option>
+          <option value="300">5 min</option>
+          <option value="420">7 min</option>
+          <option value="600">10 min</option>
+        </select>
+      </label>
+    </div>
   </div>
 
   <div class="error-msg" id="errorMsg"></div>
@@ -254,6 +253,6 @@
 <!-- Toast notifications -->
 <div class="toast-container" id="toastContainer"></div>
 
-<script src="app.js?v=3"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
