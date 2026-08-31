@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 
@@ -140,6 +140,20 @@
         <input type="text" id="newTopicCategory" placeholder="Category (optional)" style="max-width:130px;">
         <button id="addTopicBtn">Add</button>
       </div>
+
+      <div class="ai-deck-builder">
+        <h3>Generate topics with AI</h3>
+        <p class="ai-deck-note">Describe what you want to practise and AI will add a fresh set of prompts to this deck.</p>
+        <div class="inline-form ai-deck-form">
+          <input type="text" id="aiDeckTheme" maxlength="300" placeholder="e.g. Software engineering job interview">
+          <label class="ai-count-field">
+            <span>Prompts</span>
+            <input type="number" id="aiDeckCount" min="1" max="30" value="10" inputmode="numeric">
+          </label>
+          <button class="primary" id="generateDeckTopicsBtn">Generate</button>
+        </div>
+        <p class="ai-deck-status" id="aiDeckStatus" aria-live="polite"></p>
+      </div>
     </div>
 
   </div>
@@ -208,6 +222,7 @@
       <div class="btn-row">
         <button id="startBtn" disabled>Start</button>
         <button id="completeBtn" disabled>Mark complete</button>
+        <button id="resetSpeechBtn" disabled>Reset speech</button>
         <button id="drawBtn" class="primary" disabled>Draw topic</button>
       </div>
     </div>
@@ -227,10 +242,10 @@
       <label>
         Duration
         <select id="durationSelect">
+          <option value="60">1 min</option>
+          <option value="120">2 min</option>
           <option value="180" selected>3 min</option>
           <option value="300">5 min</option>
-          <option value="420">7 min</option>
-          <option value="600">10 min</option>
         </select>
       </label>
     </div>
@@ -253,6 +268,6 @@
 <!-- Toast notifications -->
 <div class="toast-container" id="toastContainer"></div>
 
-<script src="app.js?v=4"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

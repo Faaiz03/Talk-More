@@ -274,6 +274,10 @@ const deckTopicList = document.getElementById('deckTopicList');
 const newTopicText = document.getElementById('newTopicText');
 const newTopicCategory = document.getElementById('newTopicCategory');
 const addTopicBtn = document.getElementById('addTopicBtn');
+const aiDeckTheme = document.getElementById('aiDeckTheme');
+const aiDeckCount = document.getElementById('aiDeckCount');
+const generateDeckTopicsBtn = document.getElementById('generateDeckTopicsBtn');
+const aiDeckStatus = document.getElementById('aiDeckStatus');
 
 function setPanelMsg(text, isErr) {
   showToast(text, isErr);
@@ -376,6 +380,7 @@ async function openDeckTopics(deckId, name) {
   panelSelectedDeckId = deckId;
   deckTopicsTitle.textContent = 'Topics in "' + name + '"';
   deckTopicsSection.classList.remove('hidden');
+  aiDeckStatus.textContent = '';
   renderDeckList();
   await renderDeckTopicList();
 }
@@ -435,6 +440,65 @@ async function deleteTopic(topicId) {
   if (selectedDeckId === panelSelectedDeckId) loadActiveDeckTopics();
 }
 
+async function generateDeckTopics() {
+  const theme = aiDeckTheme.value.trim();
+  const count = Number.parseInt(aiDeckCount.value, 10);
+  const targetDeckId = panelSelectedDeckId;
+
+  if (!targetDeckId) {
+    showToast('Select a custom deck first.', true);
+    return;
+  }
+  if (!theme) {
+    showToast('Describe the topics you want AI to create.', true);
+    aiDeckTheme.focus();
+    return;
+  }
+  if (!Number.isInteger(count) || count < 1 || count > 30) {
+    showToast('Choose between 1 and 30 prompts.', true);
+    aiDeckCount.focus();
+    return;
+  }
+
+  generateDeckTopicsBtn.disabled = true;
+  aiDeckTheme.disabled = true;
+  aiDeckCount.disabled = true;
+  aiDeckStatus.textContent = 'Creating ' + count + ' prompts…';
+
+  try {
+    const { data, error } = await sb.functions.invoke('generate-deck-topics', {
+      body: { theme, count, deckId: targetDeckId }
+    });
+    if (error) {
+      let message = error.message || 'Could not generate prompts.';
+      try {
+        const errorBody = await error.context.json();
+        if (errorBody && errorBody.error) message = errorBody.error;
+      } catch (e) { /* keep the SDK error message */ }
+      throw new Error(message);
+    }
+
+    const addedCount = Number(data && data.addedCount);
+    if (!Number.isInteger(addedCount) || addedCount < 1) {
+      throw new Error('AI did not return any usable prompts.');
+    }
+
+    aiDeckTheme.value = '';
+    aiDeckStatus.textContent = addedCount + ' prompt' + (addedCount === 1 ? '' : 's') + ' added.';
+    showToast(aiDeckStatus.textContent);
+    await renderDeckTopicList();
+    if (selectedDeckId === targetDeckId) loadActiveDeckTopics();
+  } catch (err) {
+    const message = err && err.message ? err.message : 'Could not generate prompts.';
+    aiDeckStatus.textContent = message;
+    showToast(message, true);
+  } finally {
+    generateDeckTopicsBtn.disabled = false;
+    aiDeckTheme.disabled = false;
+    aiDeckCount.disabled = false;
+  }
+}
+
 const practiceNavBtn = document.getElementById('practiceNavBtn');
 if (practiceNavBtn) {
   practiceNavBtn.addEventListener('click', () => {
@@ -460,6 +524,10 @@ manageDecksBtn.addEventListener('click', () => {
 });
 createDeckBtn.addEventListener('click', createDeck);
 addTopicBtn.addEventListener('click', addTopicToDeck);
+generateDeckTopicsBtn.addEventListener('click', generateDeckTopics);
+aiDeckTheme.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') generateDeckTopics();
+});
 
 deckSelect.addEventListener('change', () => {
   selectedDeckId = deckSelect.value;
@@ -557,6 +625,7 @@ async function loadActiveDeckTopics() {
   startBtn.disabled = true;
   drawBtn.disabled = true;
   completeBtn.disabled = true;
+  resetSpeechBtn.disabled = true;
   showTopicSkeleton();
   const { data, error } = await sb
     .from('topics')
@@ -613,6 +682,7 @@ function handleEmptyDeck(message) {
   startBtn.disabled = true;
   drawBtn.disabled = true;
   completeBtn.disabled = true;
+  resetSpeechBtn.disabled = true;
 }
 
 function finishLoadingTopics() {
@@ -644,6 +714,7 @@ const barFill = document.getElementById('barFill');
 const startBtn = document.getElementById('startBtn');
 const drawBtn = document.getElementById('drawBtn');
 const completeBtn = document.getElementById('completeBtn');
+const resetSpeechBtn = document.getElementById('resetSpeechBtn');
 const resetBtn = document.getElementById('resetBtn');
 const durationSelect = document.getElementById('durationSelect');
 const statusDot = document.getElementById('statusDot');
@@ -859,6 +930,7 @@ function drawTopic() {
   remaining = duration;
   updateClock();
   completeBtn.disabled = false;
+  resetSpeechBtn.disabled = false;
   micDenied = false;
 }
 
@@ -902,6 +974,40 @@ function enableControls() {
   startBtn.disabled = false;
   drawBtn.disabled = false;
   completeBtn.disabled = false;
+  resetSpeechBtn.disabled = false;
+}
+
+async function resetSpeechAttempt() {
+  if (!currentTopic) return;
+  const restartImmediately = running;
+
+  resetSpeechBtn.disabled = true;
+  startBtn.disabled = true;
+  completeBtn.disabled = true;
+  drawBtn.disabled = true;
+  stopTimer();
+
+  // Fully stop and discard this take. A reset while actively speaking starts
+  // a fresh recording immediately; a paused take returns to the ready state.
+  await finalizeSpeechCapture();
+  recordedChunks = [];
+  resetCaptions();
+  hideEvalPanel();
+  micDenied = false;
+  remaining = duration;
+  updateClock();
+  statusText.textContent = 'ready';
+
+  startBtn.disabled = false;
+  completeBtn.disabled = false;
+  drawBtn.disabled = false;
+  resetSpeechBtn.disabled = false;
+  if (restartImmediately) {
+    startTimer();
+    showToast('Speech reset and restarted.');
+  } else {
+    showToast('Speech reset. Start again when you’re ready.');
+  }
 }
 
 /* ---- Evaluation panel ---- */
@@ -928,15 +1034,23 @@ function setEvalNote(text) {
 function setEvalLoading() {
   evalBody.innerHTML = '<p class="eval-loading">Evaluating your response…</p>';
 }
-function renderEvalResult(scores, feedback, example) {
+function renderEvalResult(scores, feedback, example, responseType) {
   const dims = [
     ['clarity', 'Clarity'],
     ['structure', 'Structure'],
+    ['specificity', 'Specificity'],
+    ['delivery_fluency', 'Delivery fluency'],
     ['filler_words', 'Filler words'],
-    ['pacing', 'Pacing']
+    ['average_speaking_rate', 'Speaking rate']
   ];
   const rows = dims.map(([key, label]) => {
-    const val = scores ? scores[key] : null;
+    // Older evaluations stored this metric as "pacing". Keep them readable
+    // while all new evaluations use the more accurate name.
+    const val = scores
+      ? (key === 'average_speaking_rate'
+          ? (scores.average_speaking_rate ?? scores.pacing)
+          : scores[key])
+      : null;
     if (val === null || val === undefined) {
       return '<div class="eval-row"><span class="eval-label">' + label +
         '</span><span></span><span class="eval-score">—</span></div>';
@@ -949,7 +1063,10 @@ function renderEvalResult(scores, feedback, example) {
   const exampleHtml = example && example.trim()
     ? '<div class="eval-example"><span class="eval-example-label">Try something like</span><p>' + escapeHtml(example) + '</p></div>'
     : '';
-  evalBody.innerHTML = rows + '<p class="eval-feedback">' + escapeHtml(feedback || '') + '</p>' + exampleHtml;
+  const typeHtml = responseType
+    ? '<p class="eval-response-type">Response type: ' + escapeHtml(responseType.replaceAll('_', ' ')) + '</p>'
+    : '';
+  evalBody.innerHTML = typeHtml + rows + '<p class="eval-feedback">' + escapeHtml(feedback || '') + '</p>' + exampleHtml;
 }
 
 function blobToBase64(blob) {
@@ -1002,13 +1119,21 @@ async function evaluateAttempt(topic, audioBlob, deckId, completionId, wasSpeech
   });
 
   if (error || !data || !data.scores) {
-    setEvalNote('Could not get feedback for this attempt (evaluation service error). Your completion was still saved.');
+    let detail = data && data.error ? data.error : '';
+    if (error && !detail) {
+      try {
+        const errorBody = await error.context.json();
+        detail = errorBody && errorBody.error ? errorBody.error : '';
+      } catch (e) { /* keep the safe generic message */ }
+    }
+    const suffix = detail ? ' ' + detail + '.' : '';
+    setEvalNote('Could not get feedback for this attempt.' + suffix + ' Your completion was still saved.');
     return;
   }
 
-  renderEvalResult(data.scores, data.feedback, data.example);
+  renderEvalResult(data.scores, data.feedback, data.example, data.response_type);
 
-  await sb.from('evaluations').insert({
+  const evaluationRow = {
     user_id: currentUser.id,
     completion_id: completionId,
     deck_id: deckId,
@@ -1018,13 +1143,21 @@ async function evaluateAttempt(topic, audioBlob, deckId, completionId, wasSpeech
     transcript: data.transcript || '',
     scores: data.scores,
     feedback: data.feedback || '',
-    example: data.example || ''
-  });
+    example: data.example || '',
+    response_type: data.response_type || 'general'
+  };
+  const { error: evaluationInsertError } = await sb.from('evaluations').insert(evaluationRow);
+  if (evaluationInsertError && /response_type/i.test(evaluationInsertError.message || '')) {
+    // Safe rollout for projects where the optional migration has not run yet.
+    const { response_type, ...legacyRow } = evaluationRow;
+    await sb.from('evaluations').insert(legacyRow);
+  }
 }
 
 async function markComplete() {
   if (!currentTopic || !currentUser) return;
   completeBtn.disabled = true;
+  resetSpeechBtn.disabled = true;
 
   // Snapshot everything before state moves on to the next topic
   const topicSnapshot = { ...currentTopic };
@@ -1052,6 +1185,7 @@ async function markComplete() {
   if (error) {
     statusText.textContent = 'error saving';
     completeBtn.disabled = false;
+    resetSpeechBtn.disabled = false;
     return;
   }
   const doneKey = topicSnapshot.key;
@@ -1075,6 +1209,7 @@ async function markComplete() {
 }
 
 completeBtn.addEventListener('click', markComplete);
+resetSpeechBtn.addEventListener('click', resetSpeechAttempt);
 
 function showError(message) {
   hideTopicSkeleton();
@@ -1085,6 +1220,7 @@ function showError(message) {
 }
 
 async function loadDefaultTopics() {
+  resetSpeechBtn.disabled = true;
   showTopicSkeleton();
   try {
     const res = await fetch('topics.json', { cache: 'no-store' });
@@ -1232,7 +1368,9 @@ const chartLegend = document.getElementById('chartLegend');
 const CHART_METRICS = [
   { key: 'clarity', label: 'Clarity' },
   { key: 'structure', label: 'Structure' },
-  { key: 'pacing', label: 'Pacing' },
+  { key: 'specificity', label: 'Specificity' },
+  { key: 'delivery_fluency', label: 'Delivery fluency' },
+  { key: 'average_speaking_rate', label: 'Speaking rate' },
   { key: 'filler_words', label: 'Filler words' }
 ];
 const chartHiddenMetrics = new Set();
@@ -1350,14 +1488,32 @@ function renderChart(rows) {
     gridLines += '<text x="' + (padL - 6) + '" y="' + (y + 3) + '" text-anchor="end" font-size="9" fill="#8a8a85" font-family="IBM Plex Mono, monospace">' + g + '</text>';
   }
 
-  const dashPatterns = { clarity: 'none', structure: '7,4', pacing: '2,4', filler_words: '10,3,2,3' };
-  const opacities = { clarity: 1, structure: 0.85, pacing: 0.85, filler_words: 0.65 };
+  const dashPatterns = {
+    clarity: 'none',
+    structure: '7,4',
+    specificity: '3,3',
+    delivery_fluency: '9,3',
+    average_speaking_rate: '2,4',
+    filler_words: '10,3,2,3'
+  };
+  const opacities = {
+    clarity: 1,
+    structure: 0.88,
+    specificity: 0.76,
+    delivery_fluency: 0.82,
+    average_speaking_rate: 0.72,
+    filler_words: 0.6
+  };
 
   let paths = '';
   CHART_METRICS.forEach(m => {
     if (chartHiddenMetrics.has(m.key)) return;
     const pts = rows.map((r, i) => {
-      const v = r.scores ? r.scores[m.key] : null;
+      const v = r.scores
+        ? (m.key === 'average_speaking_rate'
+            ? (r.scores.average_speaking_rate ?? r.scores.pacing)
+            : r.scores[m.key])
+        : null;
       return (v === null || v === undefined) ? null : [xFor(i), yFor(v)];
     });
     let d = '';
