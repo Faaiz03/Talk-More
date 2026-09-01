@@ -406,6 +406,60 @@ option {
   line-height: 1.5;
 }
 
+.google-auth-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--paper);
+  border-color: var(--paper);
+  color: #171717;
+  font-weight: 600;
+}
+
+.google-auth-btn:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #0a0a0a;
+}
+
+.google-auth-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #d4d4d8;
+  color: #4285f4;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0;
+  color: var(--gray);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
 .field {
   display: flex;
   flex-direction: column;

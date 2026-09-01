@@ -64,6 +64,7 @@ const authSub = document.getElementById('authSub');
 const authEmail = document.getElementById('authEmail');
 const authPassword = document.getElementById('authPassword');
 const authSubmitBtn = document.getElementById('authSubmitBtn');
+const authGoogleBtn = document.getElementById('authGoogleBtn');
 const authSwitchText = document.getElementById('authSwitchText');
 const authSwitchBtn = document.getElementById('authSwitchBtn');
 const authMsg = document.getElementById('authMsg');
@@ -96,6 +97,24 @@ function setAuthMode(mode) {
 
 authSwitchBtn.addEventListener('click', () => {
   setAuthMode(authMode === 'login' ? 'signup' : 'login');
+});
+
+authGoogleBtn.addEventListener('click', async () => {
+  authGoogleBtn.disabled = true;
+  setAuthMsg('Redirecting to Google…');
+
+  const redirectTo = window.location.origin + window.location.pathname;
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo }
+  });
+
+  // A successful OAuth call redirects away. This branch is reached only if
+  // Supabase could not start the Google flow.
+  if (error) {
+    authGoogleBtn.disabled = false;
+    setAuthMsg(error.message, 'err');
+  }
 });
 
 authSubmitBtn.addEventListener('click', async () => {
