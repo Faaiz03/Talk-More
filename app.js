@@ -264,9 +264,16 @@ function showAuthScreen() {
 }
 
 function showAppScreen(user) {
+  // iOS Safari zooms the visual viewport when a focused form control uses
+  // text smaller than 16px. Blur the login field before hiding the auth view
+  // so that zoom is not carried into the authenticated application screen.
+  const focusedElement = document.activeElement;
+  if (focusedElement instanceof HTMLElement) focusedElement.blur();
+
   landingStage.classList.add('hidden');
   authStage.classList.add('hidden');
   appStage.classList.remove('hidden');
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   userEmail.textContent = user.email;
   currentUser = user;
   loadUserDecks();
