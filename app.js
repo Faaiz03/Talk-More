@@ -53,7 +53,9 @@ function skeletonListHTML(count, widths) {
   return html;
 }
 
-let authMode = 'login'; // 'login' | 'signup'
+let authMode = 'login'; // 'login' | 'signup' | 'recovery' | 'update'
+let passwordRecoveryActive = false;
+let currentUser = null;
 
 const landingStage = document.getElementById('landingStage');
 const authStage = document.getElementById('authStage');
@@ -62,9 +64,18 @@ const authBackBtn = document.getElementById('authBackBtn');
 const authTitle = document.getElementById('authTitle');
 const authSub = document.getElementById('authSub');
 const authEmail = document.getElementById('authEmail');
+const authEmailField = document.getElementById('authEmailField');
 const authPassword = document.getElementById('authPassword');
+const authPasswordField = document.getElementById('authPasswordField');
+const authConfirmField = document.getElementById('authConfirmField');
+const authConfirmPassword = document.getElementById('authConfirmPassword');
+const passwordHint = document.getElementById('passwordHint');
 const authSubmitBtn = document.getElementById('authSubmitBtn');
 const authGoogleBtn = document.getElementById('authGoogleBtn');
+const socialAuthSection = document.getElementById('socialAuthSection');
+const authLoginOptions = document.getElementById('authLoginOptions');
+const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+const authSwitch = document.getElementById('authSwitch');
 const authSwitchText = document.getElementById('authSwitchText');
 const authSwitchBtn = document.getElementById('authSwitchBtn');
 const authMsg = document.getElementById('authMsg');
@@ -80,18 +91,42 @@ function setAuthMsg(text, type) {
 function setAuthMode(mode) {
   authMode = mode;
   setAuthMsg('');
+
+  const needsConfirmation = mode === 'signup' || mode === 'update';
+  const usesEmail = mode !== 'update';
+  const usesPassword = mode !== 'recovery';
+  socialAuthSection.classList.toggle('hidden', mode === 'recovery' || mode === 'update');
+  authEmailField.classList.toggle('hidden', !usesEmail);
+  authPasswordField.classList.toggle('hidden', !usesPassword);
+  authConfirmField.classList.toggle('hidden', !needsConfirmation);
+  passwordHint.classList.toggle('hidden', !needsConfirmation);
+  authLoginOptions.classList.toggle('hidden', mode !== 'login');
+  authSwitch.classList.toggle('hidden', mode === 'update');
+  authPassword.autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+  authBackBtn.textContent = mode === 'update' ? '← Cancel' : '← Back';
+
   if (mode === 'login') {
     authTitle.textContent = 'Welcome back';
     authSub.textContent = 'Log in to save your practice history and decks.';
     authSubmitBtn.textContent = 'Log in';
     authSwitchText.textContent = "Don't have an account?";
     authSwitchBtn.textContent = 'Sign up';
-  } else {
+  } else if (mode === 'signup') {
     authTitle.textContent = 'Create an account';
-    authSub.textContent = 'Save decks and track your practice over time.';
+    authSub.textContent = 'Create your account to save decks and track progress.';
     authSubmitBtn.textContent = 'Sign up';
     authSwitchText.textContent = 'Already have an account?';
     authSwitchBtn.textContent = 'Log in';
+  } else if (mode === 'recovery') {
+    authTitle.textContent = 'Reset your password';
+    authSub.textContent = 'Enter your email and we’ll send you a secure reset link.';
+    authSubmitBtn.textContent = 'Send reset link';
+    authSwitchText.textContent = 'Remembered your password?';
+    authSwitchBtn.textContent = 'Back to login';
+  } else {
+    authTitle.textContent = 'Choose a new password';
+    authSub.textContent = 'Enter and confirm the new password for your account.';
+    authSubmitBtn.textContent = 'Update password';
   }
 }
 
@@ -99,14 +134,19 @@ authSwitchBtn.addEventListener('click', () => {
   setAuthMode(authMode === 'login' ? 'signup' : 'login');
 });
 
+forgotPasswordBtn.addEventListener('click', () => setAuthMode('recovery'));
+
+function authRedirectUrl() {
+  return window.location.origin + window.location.pathname;
+}
+
 authGoogleBtn.addEventListener('click', async () => {
   authGoogleBtn.disabled = true;
   setAuthMsg('Redirecting to Google…');
 
-  const redirectTo = window.location.origin + window.location.pathname;
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo }
+    options: { redirectTo: authRedirectUrl() }
   });
 
   // A successful OAuth call redirects away. This branch is reached only if
@@ -120,10 +160,65 @@ authGoogleBtn.addEventListener('click', async () => {
 authSubmitBtn.addEventListener('click', async () => {
   const email = authEmail.value.trim();
   const password = authPassword.value;
+  const confirmation = authConfirmPassword.value;
+
+  if (authMode === 'recovery') {
+    if (!email) {
+      setAuthMsg('Enter the email address for your account.', 'err');
+      authEmail.focus();
+      return;
+    }
+    authSubmitBtn.disabled = true;
+    setAuthMsg('Sending reset link…');
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: authRedirectUrl()
+    });
+    authSubmitBtn.disabled = false;
+    if (error) { setAuthMsg(error.message, 'err'); return; }
+    setAuthMsg('Check your inbox for the password reset link.', 'ok');
+    return;
+  }
+
+  if (authMode === 'update') {
+    if (!password || !confirmation) {
+      setAuthMsg('Enter and retype your new password.', 'err');
+      return;
+    }
+    if (password.length < 8) {
+      setAuthMsg('Use at least 8 characters for your password.', 'err');
+      return;
+    }
+    if (password !== confirmation) {
+      setAuthMsg('The passwords do not match.', 'err');
+      authConfirmPassword.focus();
+      return;
+    }
+    authSubmitBtn.disabled = true;
+    setAuthMsg('Updating password…');
+    const { data, error } = await sb.auth.updateUser({ password });
+    authSubmitBtn.disabled = false;
+    if (error) { setAuthMsg(error.message, 'err'); return; }
+    passwordRecoveryActive = false;
+    window.history.replaceState({}, document.title, window.location.pathname);
+    showToast('Password updated successfully.');
+    if (data.user) showAppScreen(data.user);
+    return;
+  }
+
   if (!email || !password) {
     setAuthMsg('Enter both email and password.', 'err');
     return;
   }
+  if (authMode === 'signup' && password.length < 8) {
+    setAuthMsg('Use at least 8 characters for your password.', 'err');
+    return;
+  }
+  if (authMode === 'signup' && password !== confirmation) {
+    setAuthMsg('The passwords do not match.', 'err');
+    authConfirmPassword.focus();
+    return;
+  }
+
   authSubmitBtn.disabled = true;
   setAuthMsg(authMode === 'login' ? 'Logging in…' : 'Creating account…');
 
@@ -133,12 +228,22 @@ authSubmitBtn.addEventListener('click', async () => {
     if (error) { setAuthMsg(error.message, 'err'); return; }
     // onAuthStateChange will handle showing the app
   } else {
-    const { error } = await sb.auth.signUp({ email, password });
+    const { error } = await sb.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: authRedirectUrl() }
+    });
     authSubmitBtn.disabled = false;
     if (error) { setAuthMsg(error.message, 'err'); return; }
-    setAuthMsg('Account created. Check your email to confirm, then log in.', 'ok');
     setAuthMode('login');
+    setAuthMsg('Account created. Check your email to confirm, then log in.', 'ok');
   }
+});
+
+[authEmail, authPassword, authConfirmPassword].forEach(input => {
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !authSubmitBtn.disabled) authSubmitBtn.click();
+  });
 });
 
 logoutBtn.addEventListener('click', async () => {
@@ -168,19 +273,32 @@ function showAppScreen(user) {
   if (topics.length === 0) loadActiveDeckTopics();
 }
 
-authBackBtn.addEventListener('click', showLandingScreen);
-
-sb.auth.onAuthStateChange((event, session) => {
-  if (session && session.user) {
-    showAppScreen(session.user);
-  } else {
-    showLandingScreen();
+authBackBtn.addEventListener('click', async () => {
+  if (authMode === 'recovery') {
+    setAuthMode('login');
+    return;
   }
+  if (authMode === 'update') {
+    passwordRecoveryActive = false;
+    await sb.auth.signOut();
+    setAuthMode('login');
+    showAuthScreen();
+    return;
+  }
+  showLandingScreen();
 });
 
-sb.auth.getSession().then(({ data }) => {
-  if (data.session && data.session.user) {
-    showAppScreen(data.session.user);
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    passwordRecoveryActive = true;
+    currentUser = session && session.user ? session.user : null;
+    setAuthMode('update');
+    showAuthScreen();
+    return;
+  }
+  if (passwordRecoveryActive) return;
+  if (session && session.user) {
+    showAppScreen(session.user);
   } else {
     showLandingScreen();
   }
@@ -276,7 +394,6 @@ demoStartBtn.addEventListener('click', startDemoTimer);
 demoDrawBtn.addEventListener('click', drawDemoTopic);
 
 /* ---- Decks ---- */
-let currentUser = null;
 let userDecks = [];          // [{id, name}]
 let selectedDeckId = 'default';
 let panelSelectedDeckId = null;
