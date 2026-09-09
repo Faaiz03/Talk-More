@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
 
@@ -137,6 +137,7 @@
       <span class="nav-link" id="completedBtn">Completed</span>
       <span class="nav-link" id="historyBtn">History</span>
       <span class="nav-link" id="progressBtn">Analytics</span>
+      <span class="nav-link" id="conversationBtn">Conversations</span>
     </nav>
   </div>
 
@@ -221,6 +222,59 @@
     <ul class="topic-list" id="completedList"></ul>
   </div>
 
+  <div class="decks-panel hidden" id="conversationPanel">
+    <div id="conversationSetup">
+      <h2>Conversation practice</h2>
+      <p class="conversation-intro">Choose a mode, set the situation, and practise responding across multiple turns.</p>
+
+      <div class="conversation-mode-grid" role="group" aria-label="Conversation mode">
+        <button class="conversation-mode-card active" type="button" data-conversation-mode="mock_interview">
+          <span class="conversation-mode-name">Mock interview</span>
+          <span class="conversation-mode-copy">Professional questions with grounded follow-ups that probe vague answers.</span>
+        </button>
+        <button class="conversation-mode-card" type="button" data-conversation-mode="difficult_conversation">
+          <span class="conversation-mode-name">Difficult conversation</span>
+          <span class="conversation-mode-copy">Practise staying clear and constructive while the other person pushes back.</span>
+        </button>
+      </div>
+
+      <div class="conversation-form">
+        <div class="field">
+          <label for="conversationFocus" id="conversationFocusLabel">Role or interview focus</label>
+          <textarea id="conversationFocus" maxlength="500" rows="3" placeholder="e.g. Mid-level frontend developer interview"></textarea>
+        </div>
+        <div class="field hidden" id="conversationAgentRoleField">
+          <label for="conversationAgentRole">Who should the agent play?</label>
+          <input id="conversationAgentRole" maxlength="120" placeholder="e.g. A defensive coworker">
+        </div>
+        <div class="conversation-start-row">
+          <label for="conversationTurnLimit">
+            Turns
+            <select id="conversationTurnLimit"></select>
+          </label>
+          <button class="primary" id="startConversationBtn" type="button">Start conversation</button>
+        </div>
+        <p class="conversation-status" id="conversationStatus" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div class="hidden" id="conversationActive">
+      <div class="conversation-active-head">
+        <div>
+          <span class="conversation-kicker" id="conversationModeLabel">Conversation</span>
+          <h2 id="conversationActiveTitle">Practice session</h2>
+        </div>
+        <span class="conversation-progress" id="conversationProgress">0 of 5 responses</span>
+      </div>
+      <div class="conversation-messages" id="conversationMessages" aria-live="polite"></div>
+      <div class="conversation-turn-controls">
+        <button class="primary" id="conversationRecordBtn" type="button" disabled>Record response</button>
+        <button id="leaveConversationBtn" type="button">Back to modes</button>
+      </div>
+      <p class="conversation-status" id="conversationActiveStatus">Ready for your response.</p>
+    </div>
+  </div>
+
   <div id="practiceSection">
     <div class="eyebrow">
       <span><span class="dot" id="statusDot"></span><span id="statusText">loading</span></span>
@@ -287,5 +341,6 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script src="app.js?v=10"></script>
+<script src="conversation.js?v=2"></script>
 </body>
 </html>

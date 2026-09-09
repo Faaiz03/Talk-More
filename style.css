@@ -606,6 +606,7 @@ option {
 .main-nav {
   display: flex;
   gap: 24px;
+  flex-wrap: wrap;
 }
 
 .nav-link {
@@ -1412,10 +1413,198 @@ li.skel-item {
   display: block;
 }
 
+/* Turn-based conversation practice */
+.conversation-intro {
+  max-width: 620px;
+  margin: -8px 0 24px;
+  color: var(--paper-dim);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.conversation-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+button.conversation-mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 132px;
+  padding: 20px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+button.conversation-mode-card:hover,
+button.conversation-mode-card.active {
+  background: var(--surface-elevated);
+  border-color: var(--paper-dim);
+}
+
+.conversation-mode-name {
+  color: var(--paper);
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.conversation-mode-copy {
+  margin-top: 9px;
+  color: var(--paper-dim);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.conversation-form {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.conversation-form textarea {
+  width: 100%;
+  resize: vertical;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: #0d0d10;
+  border: 1px solid var(--line-light);
+  color: var(--paper);
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  border-radius: var(--radius-sm);
+}
+
+.conversation-form textarea:focus-visible {
+  outline: none;
+  border-color: var(--paper);
+}
+
+.conversation-start-row,
+.conversation-turn-controls,
+.conversation-active-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+#conversationRecordBtn.recording {
+  background: #3a1c20;
+  border-color: var(--accent-crimson);
+  color: #fecaca;
+}
+
+.conversation-start-row label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--gray);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.conversation-status {
+  min-height: 1.4em;
+  margin: 12px 0 0;
+  color: var(--paper-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.conversation-active-head {
+  align-items: flex-start;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.conversation-active-head h2 {
+  margin: 4px 0 0;
+}
+
+.conversation-kicker,
+.conversation-progress {
+  color: var(--accent-amber);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.conversation-progress {
+  color: var(--gray);
+  white-space: nowrap;
+}
+
+.conversation-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 180px;
+  padding: 26px 0;
+}
+
+.conversation-message {
+  max-width: 82%;
+  padding: 15px 17px;
+  border: 1px solid var(--line);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.conversation-message.agent {
+  align-self: flex-start;
+  background: var(--surface);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) var(--radius-sm);
+}
+
+.conversation-message.user {
+  align-self: flex-end;
+  background: var(--paper);
+  color: #171717;
+  border-color: var(--paper);
+  border-radius: var(--radius-sm) 0 var(--radius-sm) var(--radius-sm);
+}
+
+.conversation-message-role {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--gray);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.conversation-message.user .conversation-message-role {
+  color: #52525b;
+}
+
 /* Responsive queries */
 @media (max-width: 640px) {
   .landing-features {
     grid-template-columns: 1fr;
+  }
+  .conversation-mode-grid {
+    grid-template-columns: 1fr;
+  }
+  .conversation-start-row,
+  .conversation-turn-controls,
+  .conversation-active-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .conversation-progress {
+    white-space: normal;
+  }
+  .conversation-message {
+    max-width: 94%;
   }
   .stage {
     padding: 24px 16px;
